@@ -1758,15 +1758,16 @@
    Responsive - iPhone safe areas
    ============================================ */
 
-@supports (padding: env(safe-area-inset-bottom)) {
+@supports (padding-top: env(safe-area-inset-top)) {
+  .app {
+    padding-top: calc(var(--space-md) + env(safe-area-inset-top));
+    padding-left: calc(var(--space-sm) + env(safe-area-inset-left));
+    padding-right: calc(var(--space-sm) + env(safe-area-inset-right));
+  }
+
   .start-test-bar,
   .vocab-test-bar {
     padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
-  }
-
-  .app {
-    padding-left: calc(var(--space-sm) + env(safe-area-inset-left));
-    padding-right: calc(var(--space-sm) + env(safe-area-inset-right));
   }
 }
 
