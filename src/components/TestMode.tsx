@@ -39,13 +39,11 @@ export function TestMode({
   // 有保存状态时恢复，否则从空状态开始
   const [questions, setQuestions] = useState<TestQuestion[]>(savedState?.questions ?? []);
   const [currentIndex, setCurrentIndex] = useState(savedState?.currentIndex ?? 0);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [correctWords, setCorrectWords] = useState<Word[]>(savedState?.correctWords ?? []);
   const [incorrectWords, setIncorrectWords] = useState<Word[]>(savedState?.incorrectWords ?? []);
   const questionsGenerated = useRef(!!savedState);
-
-  // 用 ref 管理选项反馈样式，绕过 React 渲染周期，避免移动端样式残留
-  const selectedBtnRef = useRef<HTMLButtonElement | null>(null);
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 用 ref 跟踪最新答题状态，避免 setTimeout 闭包过期
@@ -102,12 +100,10 @@ export function TestMode({
       let wrongOptions: string[];
 
       if (difficulty === 'hard' && isChineseToEnglish && confusingWordsMap) {
-        // 困难模式：看中文选英文 — 使用词型相近的词
         const confusingList = confusingWordsMap[word.english] ?? [];
         const fromConfusing = shuffle(confusingList).slice(0, 3);
         if (fromConfusing.length < 3) {
           const need = 3 - fromConfusing.length;
-          // 优先选同词性的词作为补充
           const samePos = optionPool.filter(w =>
             w.english !== word.english &&
             w.partOfSpeech === word.partOfSpeech &&
@@ -121,7 +117,6 @@ export function TestMode({
           wrongOptions = fromConfusing;
         }
       } else if (difficulty === 'hard' && !isChineseToEnglish && confusingWordsMap) {
-        // 困难模式：看英文选中文 — 使用词型相近词的中文释义作为干扰项
         const confusingList = confusingWordsMap[word.english] ?? [];
         const confusingChinese: string[] = [];
         for (const ce of confusingList) {
@@ -133,7 +128,6 @@ export function TestMode({
         const fromConfusing = shuffle(confusingChinese).slice(0, 3);
         if (fromConfusing.length < 3) {
           const need = 3 - fromConfusing.length;
-          // 优先选同词性的词的中文释义作为补充
           const samePos = optionPool.filter(w =>
             w.chinese !== word.chinese &&
             w.partOfSpeech === word.partOfSpeech &&
@@ -147,7 +141,6 @@ export function TestMode({
           wrongOptions = fromConfusing;
         }
       } else {
-        // 普通难度：从全量词池随机抽取
         const wrongWords = optionPool.filter(w =>
           (isChineseToEnglish ? w.english : w.chinese) !== correctAnswer
         );
@@ -156,7 +149,6 @@ export function TestMode({
         );
       }
 
-      // 去重：确保 correctAnswer 恰好出现一次，干扰项不重复
       const uniqueWrong = [...new Set(wrongOptions.filter(o => o !== correctAnswer))];
       while (uniqueWrong.length < 3) {
         const filler = optionPool.find(w =>
@@ -180,60 +172,55 @@ export function TestMode({
     questionsGenerated.current = true;
   }, [units, savedState, testMode, allWordsProp, difficulty, confusingWordsMap]);
 
-  // 前进到下一题或结束测试 — 直接操作 DOM 清除反馈样式
-  const advance = useCallback((isCorrect: boolean, word: Word, selectedBtn: HTMLButtonElement | null) => {
+  // 前进到下一题或结束测试
+  const advance = useCallback((isCorrect: boolean, word: Word) => {
     const { correctWords: c, incorrectWords: ic, currentIndex: idx } = stateRef.current;
     const nextCorrect = isCorrect ? [...c, word] : c;
     const nextIncorrect = isCorrect ? ic : [...ic, word];
 
     advanceTimeoutRef.current = setTimeout(() => {
-      // 直接清除按钮上的反馈样式
-      if (selectedBtn) {
-        selectedBtn.classList.remove('correct', 'incorrect');
-      }
-
       if (idx < questions.length - 1) {
-        setCurrentIndex(prev => prev + 1);
+        // 先重置选择状态，再切题
+        setSelectedAnswer(null);
         setIsAnswered(false);
+        setCurrentIndex(prev => prev + 1);
       } else {
         onTestComplete(nextCorrect, nextIncorrect);
       }
     }, 800);
   }, [questions.length, onTestComplete]);
 
-  const handleAnswer = (answer: string, btn: HTMLButtonElement) => {
+  const handleAnswer = useCallback((answer: string) => {
     if (isAnswered) return;
 
+    setSelectedAnswer(answer);
     setIsAnswered(true);
 
-    // 直接操作 DOM 添加反馈样式
     const currentQuestion = questions[currentIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
 
     if (isCorrect) {
-      btn.classList.add('correct');
       setCorrectWords(prev => [...prev, currentQuestion.word]);
     } else {
-      btn.classList.add('incorrect');
       setIncorrectWords(prev => [...prev, currentQuestion.word]);
       onWrongWord?.(currentQuestion.word);
     }
-    selectedBtnRef.current = btn;
 
-    advance(isCorrect, currentQuestion.word, btn);
-  };
+    advance(isCorrect, currentQuestion.word);
+  }, [isAnswered, questions, currentIndex, onWrongWord, advance]);
 
-  const handleDontKnow = () => {
+  const handleDontKnow = useCallback(() => {
     if (isAnswered) return;
 
+    setSelectedAnswer('__dont_know__');
     setIsAnswered(true);
 
     const currentQuestion = questions[currentIndex];
     setIncorrectWords(prev => [...prev, currentQuestion.word]);
     onWrongWord?.(currentQuestion.word);
 
-    advance(false, currentQuestion.word, null);
-  };
+    advance(false, currentQuestion.word);
+  }, [isAnswered, questions, currentIndex, onWrongWord, advance]);
 
   // 键盘快捷键：1-4 选择选项，0 表示不知道
   useEffect(() => {
@@ -244,9 +231,7 @@ export function TestMode({
         const index = parseInt(key) - 1;
         const currentQ = questions[currentIndex];
         if (currentQ && index < currentQ.options.length) {
-          const btns = document.querySelectorAll('.options .option');
-          const btn = btns[index] as HTMLButtonElement;
-          if (btn) handleAnswer(currentQ.options[index], btn);
+          handleAnswer(currentQ.options[index]);
         }
       } else if (key === '0') {
         handleDontKnow();
@@ -254,7 +239,7 @@ export function TestMode({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  });
+  }, [isAnswered, questions, currentIndex, handleAnswer, handleDontKnow]);
 
   const handleQuit = () => {
     if (advanceTimeoutRef.current) {
@@ -298,16 +283,27 @@ export function TestMode({
         </div>
 
         <div className="options" key={currentIndex}>
-          {currentQuestion.options.map((option, index) => (
-            <button
-              key={index}
-              className="option"
-              onClick={(e) => handleAnswer(option, e.currentTarget)}
-              disabled={isAnswered}
-            >
-              {option}
-            </button>
-          ))}
+          {currentQuestion.options.map((option, index) => {
+            let className = 'option';
+            if (isAnswered) {
+              if (option === currentQuestion.correctAnswer) {
+                className += ' correct';
+              } else if (option === selectedAnswer && selectedAnswer !== '__dont_know__') {
+                className += ' incorrect';
+              }
+            }
+
+            return (
+              <button
+                key={`${currentIndex}-${index}`}
+                className={className}
+                onClick={() => handleAnswer(option)}
+                disabled={isAnswered}
+              >
+                {option}
+              </button>
+            );
+          })}
         </div>
 
         <button
