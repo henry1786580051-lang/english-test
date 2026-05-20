@@ -1633,7 +1633,7 @@
   }
 
   .col-pos {
-    display: none;
+    width: auto;
   }
 
   .col-english {
