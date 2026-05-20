@@ -57,17 +57,25 @@ function App() {
     textbooks.flatMap(tb => tb.units.flatMap(u => u.words)),
   []);
 
-  // 错题本变化时持久化
+  // 错题本变化时持久化（捕获配额超出异常）
   useEffect(() => {
-    localStorage.setItem('wrongWords', JSON.stringify(wrongWords));
+    try {
+      localStorage.setItem('wrongWords', JSON.stringify(wrongWords));
+    } catch {
+      // localStorage 配额超出时静默失败
+    }
   }, [wrongWords]);
 
   // 未完成测试进度持久化
   useEffect(() => {
-    if (savedTestState) {
-      localStorage.setItem('savedTestState', JSON.stringify(savedTestState));
-    } else {
-      localStorage.removeItem('savedTestState');
+    try {
+      if (savedTestState) {
+        localStorage.setItem('savedTestState', JSON.stringify(savedTestState));
+      } else {
+        localStorage.removeItem('savedTestState');
+      }
+    } catch {
+      // localStorage 配额超出时静默失败
     }
   }, [savedTestState]);
 
@@ -135,7 +143,8 @@ function App() {
     setPendingAction(null);
   };
 
-  const handleTestComplete = (correctWords: Word[], incorrectWords: Word[]) => {
+  /** 测试完成：记录成绩并跳转结果页 */
+  const handleTestComplete = useCallback((correctWords: Word[], incorrectWords: Word[]) => {
     setTestResult({
       totalQuestions: correctWords.length + incorrectWords.length,
       correctAnswers: correctWords.length,
@@ -144,12 +153,13 @@ function App() {
     });
     setSavedTestState(null);
     setCurrentView('result');
-  };
+  }, []);
 
-  const handleQuitTest = (state: SavedTestState) => {
+  /** 退出测试：保存当前进度 */
+  const handleQuitTest = useCallback((state: SavedTestState) => {
     setSavedTestState(state);
     setCurrentView('select');
-  };
+  }, []);
 
   /** 重试：回到模式选择页，沿用上次的单元 */
   const handleRetry = () => {
@@ -167,12 +177,13 @@ function App() {
     setTestResult(null);
   };
 
-  const handleSaveTestState = (state: SavedTestState) => {
+  /** 保存测试进度（由 TestMode 调用） */
+  const handleSaveTestState = useCallback((state: SavedTestState) => {
     setSavedTestState(state);
-  };
+  }, []);
 
   /** 记录错词，若已存在则累加错误次数 */
-  const handleWrongWord = (word: Word) => {
+  const handleWrongWord = useCallback((word: Word) => {
     setWrongWords(prev => {
       const existingIndex = prev.findIndex(
         w => w.word.english === word.english && w.word.chinese === word.chinese
@@ -191,7 +202,7 @@ function App() {
         count: 1,
       }];
     });
-  };
+  }, []);
 
   const handleShowWrongWords = () => setCurrentView('wrongWords');
   const handleBackFromWrongWords = () => setCurrentView('select');
@@ -313,7 +324,8 @@ function App() {
     input.click();
   };
 
-  const handleWrongWordsTestComplete = (correctWords: Word[], incorrectWords: Word[]) => {
+  /** 错题测试完成：与普通测试完成逻辑类似，额外重置错题测试标记 */
+  const handleWrongWordsTestComplete = useCallback((correctWords: Word[], incorrectWords: Word[]) => {
     setTestResult({
       totalQuestions: correctWords.length + incorrectWords.length,
       correctAnswers: correctWords.length,
@@ -323,7 +335,7 @@ function App() {
     setSavedTestState(null);
     setIsTestingWrongWords(false);
     setCurrentView('result');
-  };
+  }, []);
 
   return (
     <div className="app">

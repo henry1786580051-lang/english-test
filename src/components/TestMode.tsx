@@ -45,6 +45,7 @@ export function TestMode({
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackBtnRef = useRef<HTMLButtonElement | null>(null);
 
+  // 用 ref 同步最新状态，供 setTimeout 回调读取（避免闭包过期）
   const stateRef = useRef({ correctWords, incorrectWords, currentIndex });
   useEffect(() => {
     stateRef.current = { correctWords, incorrectWords, currentIndex };
@@ -52,6 +53,7 @@ export function TestMode({
 
   const isTestingWrongWords = units.length === 1 && units[0].unit === '错题本';
 
+  /** 构建当前测试快照，用于退出时保存或定期持久化 */
   const buildSnapshot = useCallback((): SavedTestState => ({
     questions,
     currentIndex: stateRef.current.currentIndex,
@@ -88,13 +90,14 @@ export function TestMode({
     });
   }, [currentIndex]);
 
-  // 生成题目（仅一次，有保存状态时跳过）
+  // 生成题目（仅执行一次，有保存状态时跳过）
   useEffect(() => {
     if (questionsGenerated.current) return;
 
     const testWords = units.flatMap(u => u.words);
     const shuffledWords = shuffle(testWords);
     const isChineseToEnglish = testMode === 'chineseToEnglish';
+    // 干扰项来源：优先使用全量词库，否则使用当前测试词库
     const optionPool = allWordsProp && allWordsProp.length > 0 ? allWordsProp : testWords;
 
     const newQuestions: TestQuestion[] = shuffledWords.map(word => {
@@ -175,14 +178,18 @@ export function TestMode({
     questionsGenerated.current = true;
   }, [units, savedState, testMode, allWordsProp, difficulty, confusingWordsMap]);
 
-  // 前进到下一题 — 先清除 DOM 样式，再切题
+  /**
+   * 前进到下一题
+   * 延迟 800ms 让用户看到反馈动画，然后清除 DOM 样式并切题。
+   * 使用 stateRef 读取最新状态，避免闭包过期。
+   */
   const advance = useCallback((isCorrect: boolean, word: Word) => {
     const { correctWords: c, incorrectWords: ic, currentIndex: idx } = stateRef.current;
     const nextCorrect = isCorrect ? [...c, word] : c;
     const nextIncorrect = isCorrect ? ic : [...ic, word];
 
     advanceTimeoutRef.current = setTimeout(() => {
-      // 直接清除按钮 DOM 上的反馈样式（inline style + class）
+      // 清除按钮 DOM 上的反馈样式（inline style + class），解决移动端样式残留问题
       const btn = feedbackBtnRef.current;
       if (btn) {
         btn.classList.remove('correct', 'incorrect');
@@ -192,7 +199,6 @@ export function TestMode({
       }
       feedbackBtnRef.current = null;
 
-      // 切题
       if (idx < questions.length - 1) {
         setCurrentIndex(prev => prev + 1);
         setIsAnswered(false);
@@ -202,6 +208,7 @@ export function TestMode({
     }, 800);
   }, [questions.length, onTestComplete]);
 
+  /** 处理用户选择答案：添加反馈样式、记录结果、延迟切题 */
   const handleAnswer = useCallback((answer: string, btn: HTMLButtonElement) => {
     if (isAnswered) return;
     setIsAnswered(true);
@@ -209,7 +216,7 @@ export function TestMode({
     const currentQuestion = questions[currentIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
 
-    // 添加反馈样式（class 用于动画，inline style 用于颜色兜底）
+    // 同时使用 class（CSS 动画）和 inline style（颜色兜底），确保移动端反馈正确显示
     btn.classList.add(isCorrect ? 'correct' : 'incorrect');
     if (isCorrect) {
       btn.style.borderColor = 'var(--color-correct)';
@@ -232,6 +239,7 @@ export function TestMode({
     advance(isCorrect, currentQuestion.word);
   }, [isAnswered, questions, currentIndex, onWrongWord, advance]);
 
+  /** 用户点击「我不知道」：直接记为错误并前进 */
   const handleDontKnow = useCallback(() => {
     if (isAnswered) return;
     setIsAnswered(true);
@@ -243,6 +251,7 @@ export function TestMode({
     advance(false, currentQuestion.word);
   }, [isAnswered, questions, currentIndex, onWrongWord, advance]);
 
+  // 键盘快捷键：数字键 1-4 选择选项，0 键表示「我不知道」
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isAnswered) return;

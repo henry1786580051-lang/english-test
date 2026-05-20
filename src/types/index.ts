@@ -1,7 +1,10 @@
+/** 词性缩写字面量类型 */
+export type PartOfSpeech = 'n.' | 'v.' | 'adj.' | 'adv.' | 'pron.' | 'prep.' | 'conj.' | 'art.' | 'int.' | 'num.' | string;
+
 export interface Word {
   english: string;
   chinese: string;
-  partOfSpeech: string;
+  partOfSpeech: PartOfSpeech;
 }
 
 export interface Unit {
