@@ -77,6 +77,17 @@ export function TestMode({
     };
   }, []);
 
+  // 题目切换后，强制清除所有选项按钮的反馈样式（移动端兼容）
+  useEffect(() => {
+    const btns = document.querySelectorAll('.options .option');
+    btns.forEach(btn => {
+      btn.classList.remove('correct', 'incorrect');
+      (btn as HTMLButtonElement).style.backgroundColor = '';
+      (btn as HTMLButtonElement).style.borderColor = '';
+      (btn as HTMLButtonElement).style.color = '';
+    });
+  }, [currentIndex]);
+
   // 生成题目（仅一次，有保存状态时跳过）
   useEffect(() => {
     if (questionsGenerated.current) return;
@@ -171,10 +182,13 @@ export function TestMode({
     const nextIncorrect = isCorrect ? ic : [...ic, word];
 
     advanceTimeoutRef.current = setTimeout(() => {
-      // 直接清除按钮 DOM 上的反馈样式
+      // 直接清除按钮 DOM 上的反馈样式（inline style + class）
       const btn = feedbackBtnRef.current;
       if (btn) {
         btn.classList.remove('correct', 'incorrect');
+        btn.style.borderColor = '';
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
       }
       feedbackBtnRef.current = null;
 
@@ -195,8 +209,16 @@ export function TestMode({
     const currentQuestion = questions[currentIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
 
-    // 直接操作 DOM 添加反馈样式
-    btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+    // 直接用 inline style 设置反馈颜色（绕过 CSS class，移动端兼容）
+    if (isCorrect) {
+      btn.style.borderColor = 'var(--color-correct)';
+      btn.style.backgroundColor = 'var(--color-correct-subtle)';
+      btn.style.color = 'var(--color-correct)';
+    } else {
+      btn.style.borderColor = 'var(--color-incorrect)';
+      btn.style.backgroundColor = 'var(--color-incorrect-subtle)';
+      btn.style.color = 'var(--color-incorrect)';
+    }
     feedbackBtnRef.current = btn;
 
     if (isCorrect) {
