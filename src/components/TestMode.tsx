@@ -3,7 +3,7 @@
  * 生成选择题，支持"看中文选英文"和"看英文选中文"两种模式。
  * 答题进度可通过 onSaveState 回调保存，支持中途退出后恢复。
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import type { Unit, Word, TestQuestion, SavedTestState, Difficulty } from '../types';
 import { shuffle } from '../utils';
 
@@ -22,6 +22,25 @@ interface TestModeProps {
   confusingWords?: Record<string, string[]>;
 }
 
+// 答题反馈状态 — 合并为单一对象，确保原子更新
+interface FeedbackState {
+  selectedAnswer: string | null;
+  isAnswered: boolean;
+}
+
+type FeedbackAction =
+  | { type: 'ANSWER'; answer: string }
+  | { type: 'RESET' };
+
+function feedbackReducer(_state: FeedbackState, action: FeedbackAction): FeedbackState {
+  switch (action.type) {
+    case 'ANSWER':
+      return { selectedAnswer: action.answer, isAnswered: true };
+    case 'RESET':
+      return { selectedAnswer: null, isAnswered: false };
+  }
+}
+
 export function TestMode({
   units,
   testMode,
@@ -36,26 +55,24 @@ export function TestMode({
   difficulty = 'normal',
   confusingWords: confusingWordsMap,
 }: TestModeProps) {
-  // 有保存状态时恢复，否则从空状态开始
   const [questions, setQuestions] = useState<TestQuestion[]>(savedState?.questions ?? []);
   const [currentIndex, setCurrentIndex] = useState(savedState?.currentIndex ?? 0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [isAnswered, setIsAnswered] = useState(false);
+  const [feedback, dispatchFeedback] = useReducer(feedbackReducer, {
+    selectedAnswer: null,
+    isAnswered: false,
+  });
   const [correctWords, setCorrectWords] = useState<Word[]>(savedState?.correctWords ?? []);
   const [incorrectWords, setIncorrectWords] = useState<Word[]>(savedState?.incorrectWords ?? []);
   const questionsGenerated = useRef(!!savedState);
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 用 ref 跟踪最新答题状态，避免 setTimeout 闭包过期
   const stateRef = useRef({ correctWords, incorrectWords, currentIndex });
   useEffect(() => {
     stateRef.current = { correctWords, incorrectWords, currentIndex };
   });
 
-  // 是否为错题本测试
   const isTestingWrongWords = units.length === 1 && units[0].unit === '错题本';
 
-  // 构造保存状态的快照
   const buildSnapshot = useCallback((): SavedTestState => ({
     questions,
     currentIndex: stateRef.current.currentIndex,
@@ -69,14 +86,12 @@ export function TestMode({
     difficulty,
   }), [questions, testMode, units, grade, volume, isTestingWrongWords, difficulty]);
 
-  // 答题状态变化时同步给父组件
   useEffect(() => {
     if (questions.length > 0 && onSaveState) {
       onSaveState(buildSnapshot());
     }
   }, [correctWords.length, incorrectWords.length, currentIndex, questions.length, onSaveState, buildSnapshot]);
 
-  // 清理定时器
   useEffect(() => {
     return () => {
       if (advanceTimeoutRef.current) {
@@ -172,17 +187,16 @@ export function TestMode({
     questionsGenerated.current = true;
   }, [units, savedState, testMode, allWordsProp, difficulty, confusingWordsMap]);
 
-  // 前进到下一题或结束测试
+  // 前进到下一题或结束测试 — 使用 useReducer 确保状态原子更新
   const advance = useCallback((isCorrect: boolean, word: Word) => {
     const { correctWords: c, incorrectWords: ic, currentIndex: idx } = stateRef.current;
     const nextCorrect = isCorrect ? [...c, word] : c;
     const nextIncorrect = isCorrect ? ic : [...ic, word];
 
     advanceTimeoutRef.current = setTimeout(() => {
+      // 原子更新：先重置反馈状态，再切题
+      dispatchFeedback({ type: 'RESET' });
       if (idx < questions.length - 1) {
-        // 先重置选择状态，再切题
-        setSelectedAnswer(null);
-        setIsAnswered(false);
         setCurrentIndex(prev => prev + 1);
       } else {
         onTestComplete(nextCorrect, nextIncorrect);
@@ -191,10 +205,9 @@ export function TestMode({
   }, [questions.length, onTestComplete]);
 
   const handleAnswer = useCallback((answer: string) => {
-    if (isAnswered) return;
+    if (feedback.isAnswered) return;
 
-    setSelectedAnswer(answer);
-    setIsAnswered(true);
+    dispatchFeedback({ type: 'ANSWER', answer });
 
     const currentQuestion = questions[currentIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
@@ -207,25 +220,23 @@ export function TestMode({
     }
 
     advance(isCorrect, currentQuestion.word);
-  }, [isAnswered, questions, currentIndex, onWrongWord, advance]);
+  }, [feedback.isAnswered, questions, currentIndex, onWrongWord, advance]);
 
   const handleDontKnow = useCallback(() => {
-    if (isAnswered) return;
+    if (feedback.isAnswered) return;
 
-    setSelectedAnswer('__dont_know__');
-    setIsAnswered(true);
+    dispatchFeedback({ type: 'ANSWER', answer: '__dont_know__' });
 
     const currentQuestion = questions[currentIndex];
     setIncorrectWords(prev => [...prev, currentQuestion.word]);
     onWrongWord?.(currentQuestion.word);
 
     advance(false, currentQuestion.word);
-  }, [isAnswered, questions, currentIndex, onWrongWord, advance]);
+  }, [feedback.isAnswered, questions, currentIndex, onWrongWord, advance]);
 
-  // 键盘快捷键：1-4 选择选项，0 表示不知道
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isAnswered) return;
+      if (feedback.isAnswered) return;
       const key = e.key;
       if (key >= '1' && key <= '4') {
         const index = parseInt(key) - 1;
@@ -239,7 +250,7 @@ export function TestMode({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAnswered, questions, currentIndex, handleAnswer, handleDontKnow]);
+  }, [feedback.isAnswered, questions, currentIndex, handleAnswer, handleDontKnow]);
 
   const handleQuit = () => {
     if (advanceTimeoutRef.current) {
@@ -275,30 +286,30 @@ export function TestMode({
         </span>
       </div>
 
-      <div className="question-card">
+      <div className="question-card" key={currentIndex}>
         <div className="question-word">
           {currentQuestion.isChineseToEnglish
             ? currentQuestion.word.chinese
             : currentQuestion.word.english}
         </div>
 
-        <div className="options" key={currentIndex}>
+        <div className="options">
           {currentQuestion.options.map((option, index) => {
             let className = 'option';
-            if (isAnswered) {
+            if (feedback.isAnswered) {
               if (option === currentQuestion.correctAnswer) {
                 className += ' correct';
-              } else if (option === selectedAnswer && selectedAnswer !== '__dont_know__') {
+              } else if (option === feedback.selectedAnswer && feedback.selectedAnswer !== '__dont_know__') {
                 className += ' incorrect';
               }
             }
 
             return (
               <button
-                key={`${currentIndex}-${index}`}
+                key={index}
                 className={className}
                 onClick={() => handleAnswer(option)}
-                disabled={isAnswered}
+                disabled={feedback.isAnswered}
               >
                 {option}
               </button>
@@ -309,7 +320,7 @@ export function TestMode({
         <button
           className="dont-know-btn"
           onClick={handleDontKnow}
-          disabled={isAnswered}
+          disabled={feedback.isAnswered}
         >
           我不知道
         </button>
