@@ -507,10 +507,17 @@
   font-family: var(--font-body);
   font-size: 1rem;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: border-color var(--transition-base), background var(--transition-base), box-shadow var(--transition-base);
   background: var(--color-bg-card);
   color: var(--color-text);
   line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.option:disabled {
+  transition: none;
+  pointer-events: none;
 }
 
 .option:hover:not(:disabled) {
