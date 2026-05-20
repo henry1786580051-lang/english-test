@@ -209,7 +209,8 @@ export function TestMode({
     const currentQuestion = questions[currentIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
 
-    // 直接用 inline style 设置反馈颜色（绕过 CSS class，移动端兼容）
+    // 添加反馈样式（class 用于动画，inline style 用于颜色兜底）
+    btn.classList.add(isCorrect ? 'correct' : 'incorrect');
     if (isCorrect) {
       btn.style.borderColor = 'var(--color-correct)';
       btn.style.backgroundColor = 'var(--color-correct-subtle)';
