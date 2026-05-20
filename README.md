@@ -20,9 +20,52 @@
 ### 🎨 界面设计
 - 🃏 简洁现代的卡片式设计
 - 📱 响应式布局，适配桌面端浏览器
-- 🎨 蓝绿色系主色调，视觉清爽舒适
+- 🎨 采用 Claude 风格暖色调配色方案（#DA7756 陶土橙为主色），温馨舒适
 
 ## 🚀 快速开始
+
+> 以下步骤面向零基础用户，按顺序操作即可在本地运行本项目。
+
+### 📋 前置准备
+
+1. **安装 Node.js**（JavaScript 运行环境）
+   - 访问 [Node.js 官网](https://nodejs.org/)
+   - 下载 **LTS（长期支持版）** 并安装
+   - 安装完成后，打开终端（Mac 用「终端」，Windows 用「命令提示符」或 PowerShell），输入以下命令验证安装成功：
+     ```bash
+     node -v
+     ```
+     看到类似 `v20.x.x` 的版本号即表示安装成功
+
+2. **安装 pnpm**（包管理工具，比 npm 更快）
+   - 在终端中执行：
+     ```bash
+     npm install -g pnpm
+     ```
+   - 验证安装：
+     ```bash
+     pnpm -v
+     ```
+     看到版本号即可
+
+3. **安装 Git**（代码版本管理工具）
+   - 访问 [Git 官网](https://git-scm.com/) 下载并安装
+   - 验证安装：
+     ```bash
+     git --version
+     ```
+
+### 📥 下载项目
+
+在终端中依次执行：
+
+```bash
+# 1. 克隆项目到本地
+git clone https://github.com/henry1786580051-lang/english-test.git
+
+# 2. 进入项目目录
+cd english-test
+```
 
 ### 📦 安装依赖
 
@@ -30,25 +73,48 @@
 pnpm install
 ```
 
+> 💡 首次安装可能需要 1-3 分钟，取决于网络速度。如果安装失败，可以尝试设置镜像源：
+> ```bash
+> pnpm config set registry https://registry.npmmirror.com
+> pnpm install
+> ```
+
 ### 🏃 启动开发服务器
 
 ```bash
 pnpm dev
 ```
 
-应用将在 http://localhost:5173/ 启动
+终端会显示类似以下信息：
+```
+  VITE v8.x.x  ready in xxx ms
 
-### 🔨 构建生产版本
+  ➜  Local:   http://localhost:5173/
+```
+
+在浏览器中打开 **http://localhost:5173/** 即可使用。
+
+> 💡 保持终端窗口不要关闭，关闭终端会停止服务器。按 `Ctrl + C` 可主动停止。
+
+### 🔨 构建生产版本（可选）
+
+如果需要部署到服务器或生成静态文件：
 
 ```bash
 pnpm build
 ```
 
-### 👀 预览生产版本
+构建产物会输出到 `dist/` 目录，可直接部署到任何静态托管服务。
+
+### 👀 预览生产版本（可选）
+
+构建完成后，可以在本地预览生产版本效果：
 
 ```bash
 pnpm preview
 ```
+
+> 💡 这个项目也可以直接在线使用，无需安装：https://henry1786580051-lang.github.io/english-test/
 
 ## 📖 使用说明
 
