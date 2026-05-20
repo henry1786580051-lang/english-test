@@ -25,6 +25,10 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
   const [globalSearch, setGlobalSearch] = useState('');
   const [highlightWord, setHighlightWord] = useState<string | null>(null);
   const tableBodyRef = useRef<HTMLTableSectionElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const ROW_HEIGHT = 44;
+  const BUFFER = 8;
 
   const tbKey = (tb: Textbook) => `${tb.grade}-${tb.volume}`;
 
@@ -68,6 +72,13 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
     return () => clearTimeout(timer);
   }, [highlightWord]);
 
+  // 虚拟化滚动
+  const handleScroll = useCallback(() => {
+    if (scrollContainerRef.current) {
+      setScrollTop(scrollContainerRef.current.scrollTop);
+    }
+  }, []);
+
   const handleTextbookToggle = (key: string) => {
     setExpandedTextbook(prev => prev === key ? null : key);
   };
@@ -80,12 +91,14 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
   };
 
   // 当前单元经筛选后的单词列表
-  const filteredWords = selectedUnit
-    ? selectedUnit.words.filter(w =>
-        w.english.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        w.chinese.includes(searchQuery)
-      )
-    : [];
+  const filteredWords = useMemo(() => {
+    if (!selectedUnit) return [];
+    const q = searchQuery.toLowerCase();
+    if (!q) return selectedUnit.words;
+    return selectedUnit.words.filter(w =>
+      w.english.toLowerCase().includes(q) || w.chinese.includes(searchQuery)
+    );
+  }, [selectedUnit, searchQuery]);
 
   const toggleWord = (english: string) => {
     setSelectedWords(prev => {
@@ -216,9 +229,14 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
                 />
               </div>
             </div>
-            <div className="vocabulary-table-wrapper">
+            <div
+              className="vocabulary-table-wrapper"
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              style={{ maxHeight: '70vh', overflowY: 'auto' }}
+            >
               <table className="vocabulary-table">
-                <thead>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                   <tr>
                     <th className="col-check">
                       <button
@@ -235,32 +253,88 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
                   </tr>
                 </thead>
                 <tbody ref={tableBodyRef}>
-                  {filteredWords.map((word, i) => {
-                    const isSelected = selectedWords.has(word.english);
-                    const isHighlight = highlightWord === word.english;
-                    return (
-                      <tr
-                        key={`${word.english}-${i}`}
-                        className={[
-                          isSelected ? 'row-selected' : '',
-                          isHighlight ? 'row-highlight' : '',
-                        ].filter(Boolean).join(' ')}
-                        onClick={() => toggleWord(word.english)}
-                      >
-                        <td className="col-check">
-                          <span className={`check-btn ${isSelected ? 'checked' : ''}`}>
-                            {isSelected ? '✓' : ''}
-                          </span>
-                        </td>
-                        <td className="col-english">{word.english}</td>
-                        <td className="col-pos">
-                          <span className="pos-tag">{posLabel(word.partOfSpeech)}</span>
-                          <span className="pos-abbrev">{word.partOfSpeech}</span>
-                        </td>
-                        <td className="col-chinese">{word.chinese}</td>
-                      </tr>
-                    );
-                  })}
+                  {filteredWords.length <= 60 ? (
+                    // 单词少时直接渲染
+                    filteredWords.map((word, i) => {
+                      const isSelected = selectedWords.has(word.english);
+                      const isHighlight = highlightWord === word.english;
+                      return (
+                        <tr
+                          key={`${word.english}-${i}`}
+                          className={[
+                            isSelected ? 'row-selected' : '',
+                            isHighlight ? 'row-highlight' : '',
+                          ].filter(Boolean).join(' ')}
+                          onClick={() => toggleWord(word.english)}
+                        >
+                          <td className="col-check">
+                            <span className={`check-btn ${isSelected ? 'checked' : ''}`}>
+                              {isSelected ? '✓' : ''}
+                            </span>
+                          </td>
+                          <td className="col-english">{word.english}</td>
+                          <td className="col-pos">
+                            <span className="pos-tag">{posLabel(word.partOfSpeech)}</span>
+                            <span className="pos-abbrev">{word.partOfSpeech}</span>
+                          </td>
+                          <td className="col-chinese">{word.chinese}</td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    // 单词多时虚拟化渲染
+                    <>
+                      {(() => {
+                        const containerHeight = scrollContainerRef.current?.clientHeight ?? 600;
+                        const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);
+                        const endIndex = Math.min(
+                          filteredWords.length,
+                          Math.ceil((scrollTop + containerHeight) / ROW_HEIGHT) + BUFFER
+                        );
+                        const topSpacer = startIndex * ROW_HEIGHT;
+                        const bottomSpacer = (filteredWords.length - endIndex) * ROW_HEIGHT;
+                        const visibleWords = filteredWords.slice(startIndex, endIndex);
+
+                        return (
+                          <>
+                            {topSpacer > 0 && (
+                              <tr style={{ height: topSpacer }}><td colSpan={4} /></tr>
+                            )}
+                            {visibleWords.map((word) => {
+                              const realIndex = filteredWords.indexOf(word);
+                              const isSelected = selectedWords.has(word.english);
+                              const isHighlight = highlightWord === word.english;
+                              return (
+                                <tr
+                                  key={`${word.english}-${realIndex}`}
+                                  className={[
+                                    isSelected ? 'row-selected' : '',
+                                    isHighlight ? 'row-highlight' : '',
+                                  ].filter(Boolean).join(' ')}
+                                  onClick={() => toggleWord(word.english)}
+                                >
+                                  <td className="col-check">
+                                    <span className={`check-btn ${isSelected ? 'checked' : ''}`}>
+                                      {isSelected ? '✓' : ''}
+                                    </span>
+                                  </td>
+                                  <td className="col-english">{word.english}</td>
+                                  <td className="col-pos">
+                                    <span className="pos-tag">{posLabel(word.partOfSpeech)}</span>
+                                    <span className="pos-abbrev">{word.partOfSpeech}</span>
+                                  </td>
+                                  <td className="col-chinese">{word.chinese}</td>
+                                </tr>
+                              );
+                            })}
+                            {bottomSpacer > 0 && (
+                              <tr style={{ height: bottomSpacer }}><td colSpan={4} /></tr>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>

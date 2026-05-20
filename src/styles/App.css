@@ -371,12 +371,6 @@
 
 .mode-icon {
   font-size: 2.5rem;
-  animation: pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
 }
 
 .mode-label {
@@ -507,7 +501,6 @@
   font-family: var(--font-body);
   font-size: 1rem;
   cursor: pointer;
-  transition: border-color var(--transition-base), background var(--transition-base), box-shadow var(--transition-base);
   background: var(--color-bg-card);
   color: var(--color-text);
   line-height: 1.5;
@@ -516,7 +509,6 @@
 }
 
 .option:disabled {
-  transition: none;
   pointer-events: none;
 }
 
@@ -1257,7 +1249,6 @@
 
 .vocabulary-table tbody tr {
   cursor: pointer;
-  transition: background var(--transition-fast);
 }
 
 .vocabulary-table tbody tr.row-selected td {
