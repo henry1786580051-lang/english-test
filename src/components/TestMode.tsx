@@ -274,7 +274,7 @@ export function TestMode({
             : currentQuestion.word.english}
         </div>
 
-        <div className="options">
+        <div className="options" key={currentIndex}>
           {currentQuestion.options.map((option, index) => {
             let className = 'option';
             if (isAnswered) {
