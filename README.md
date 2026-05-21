@@ -1,8 +1,30 @@
 # 📚 英语单词学习应用
 
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite)
+![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-deployed-222222?logo=githubpages)
+
 一个类似百词斩的网页端英语单词学习应用，基于 React + TypeScript + Vite 构建。
 
 > **👉 [点击这里直接在线使用](https://henry1786580051-lang.github.io/english-test/)**，无需安装任何软件，打开即用。
+
+<!-- 应用截图（请替换为实际截图） -->
+<p align="center">
+  <img src="screenshots/home.png" alt="应用首页" width="80%" />
+</p>
+
+## 📑 目录
+
+- [功能特点](#-功能特点)
+- [快速开始](#-快速开始)
+- [使用说明](#-使用说明)
+- [技术栈](#️-技术栈)
+- [数据来源](#-数据来源)
+- [项目结构](#-项目结构)
+- [贡献](#-贡献)
+- [许可证](#-许可证)
 
 ## 🌟 功能特点
 
@@ -27,10 +49,9 @@
 ## 🚀 快速开始
 
 > 💡 **不想折腾？** 可以直接 [在线使用](https://henry1786580051-lang.github.io/english-test/)，无需安装。
->
-> 以下步骤面向零基础用户，按操作系统分别说明。
 
-### 🍎 macOS
+<details>
+<summary><strong>🍎 macOS 安装步骤</strong></summary>
 
 #### 第一步：安装 Node.js
 
@@ -45,36 +66,21 @@
 
 #### 第二步：安装 pnpm
 
-在终端中执行：
-
 ```bash
 npm install -g pnpm
-```
-
-验证安装：
-
-```bash
-pnpm -v
 ```
 
 #### 第三步：安装 Git
 
 macOS 通常自带 Git。在终端输入 `git --version`，如果提示安装开发者工具则按提示安装即可。
 
-#### 第四步：下载项目
+#### 第四步：下载并运行项目
 
 ```bash
-# 克隆项目
 git clone https://github.com/henry1786580051-lang/english-test.git
-
-# 进入项目目录
 cd english-test
-```
-
-#### 第五步：安装依赖
-
-```bash
 pnpm install
+pnpm dev
 ```
 
 > 首次安装可能需要 1-3 分钟。如果安装失败，可以尝试设置国内镜像源：
@@ -83,26 +89,12 @@ pnpm install
 > pnpm install
 > ```
 
-#### 第六步：启动
+终端会显示 `http://localhost:5173/`，在浏览器中打开即可使用。按 `Ctrl + C` 可停止服务器。
 
-```bash
-pnpm dev
-```
+</details>
 
-终端会显示：
-```
-  VITE v8.x.x  ready in xxx ms
-
-  ➜  Local:   http://localhost:5173/
-```
-
-在浏览器中打开 **http://localhost:5173/** 即可使用。
-
-> 按 `Ctrl + C` 可停止服务器。
-
----
-
-### 🪟 Windows
+<details>
+<summary><strong>🪟 Windows 安装步骤</strong></summary>
 
 #### 第一步：安装 Node.js
 
@@ -117,16 +109,8 @@ pnpm dev
 
 #### 第二步：安装 pnpm
 
-在 PowerShell 中执行：
-
 ```bash
 npm install -g pnpm
-```
-
-验证安装：
-
-```bash
-pnpm -v
 ```
 
 #### 第三步：安装 Git
@@ -135,20 +119,13 @@ pnpm -v
 2. 双击安装，按提示完成（全部默认选项即可）
 3. 安装完成后重新打开 PowerShell，输入 `git --version` 验证
 
-#### 第四步：下载项目
+#### 第四步：下载并运行项目
 
 ```bash
-# 克隆项目
 git clone https://github.com/henry1786580051-lang/english-test.git
-
-# 进入项目目录
 cd english-test
-```
-
-#### 第五步：安装依赖
-
-```bash
 pnpm install
+pnpm dev
 ```
 
 > 首次安装可能需要 1-3 分钟。如果安装失败，可以尝试设置国内镜像源：
@@ -157,24 +134,9 @@ pnpm install
 > pnpm install
 > ```
 
-#### 第六步：启动
+终端会显示 `http://localhost:5173/`，在浏览器中打开即可使用。按 `Ctrl + C` 可停止服务器。
 
-```bash
-pnpm dev
-```
-
-终端会显示：
-```
-  VITE v8.x.x  ready in xxx ms
-
-  ➜  Local:   http://localhost:5173/
-```
-
-在浏览器中打开 **http://localhost:5173/** 即可使用。
-
-> 按 `Ctrl + C` 可停止服务器。
-
----
+</details>
 
 ### 🔨 构建生产版本（可选）
 
@@ -183,12 +145,6 @@ pnpm build
 ```
 
 构建产物输出到 `dist/` 目录，可部署到任何静态托管服务。
-
-### 👀 预览生产版本（可选）
-
-```bash
-pnpm preview
-```
 
 ## 📖 使用说明
 
@@ -201,21 +157,26 @@ pnpm preview
 
 ## 🛠️ 技术栈
 
-- ⚛️ React 19
-- 📘 TypeScript
-- ⚡ Vite 8
-- 🎨 CSS3
+| 技术 | 用途 |
+|------|------|
+| [React 19](https://react.dev/) | UI 框架 |
+| [TypeScript](https://www.typescriptlang.org/) | 类型安全 |
+| [Vite 8](https://vite.dev/) | 构建工具 |
+| CSS3 | 样式与动画 |
 
 ## 📚 数据来源
 
 目前词库全部基于**人教版（PEP）初中英语课本**，共涵盖 5 册教材、约 2200+ 个单词：
-- 📗 义务教育教科书·英语七年级上册
-- 📘 义务教育教科书·英语七年级下册
-- 📙 义务教育教科书·英语八年级上册
-- 📕 义务教育教科书·英语八年级下册
-- 📒 义务教育教科书·英语九年级全一册
 
-> 💡 如果有更多课本词汇的需求（如高中、小学或其他版本教材），欢迎提交 Issue 反馈，未来会陆续上线更多课本的词汇。
+| 册次 | 状态 |
+|------|------|
+| 📗 七年级上册 | ✅ 已收录 |
+| 📘 七年级下册 | ✅ 已收录 |
+| 📙 八年级上册 | ✅ 已收录 |
+| 📕 八年级下册 | ✅ 已收录 |
+| 📒 九年级全一册 | ✅ 已收录 |
+
+> 💡 如果有更多课本词汇的需求（如高中、小学或其他版本教材），欢迎提交 Issue 反馈。
 
 课本 PDF 资源来自开源项目 [ChinaTextbook](https://github.com/TapXWorld/ChinaTextbook)，感谢该项目提供的教材数据支持。
 
@@ -233,23 +194,22 @@ src/
 ├── styles/             # 样式目录
 │   └── App.css             # 应用样式
 ├── types/              # 类型定义目录
-│   └── index.ts            # TypeScript类型定义
+│   └── index.ts            # TypeScript 类型定义
 ├── App.tsx             # 主应用组件
 ├── main.tsx            # 应用入口
 └── index.css           # 全局样式
 ```
 
-## 🎁 特色功能
-
-- 🎮 **游戏化学习**：通过测试模式让背单词变得有趣
-- 📊 **数据追踪**：实时统计学习进度和正确率
-- 🎯 **精准复习**：错题本功能帮助重点攻克薄弱单词
-- 📱 **响应式设计**：支持各种屏幕尺寸，随时随地学习
-
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
+1. Fork 本仓库
+2. 创建你的功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交你的改动 (`git commit -m 'feat: add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 提交 Pull Request
+
 ## 📄 许可证
 
-MIT License
+[MIT License](LICENSE)
