@@ -2,6 +2,8 @@
 
 一个类似百词斩的网页端英语单词学习应用，基于 React + TypeScript + Vite 构建。
 
+> **👉 [点击这里直接在线使用](https://henry1786580051-lang.github.io/english-test/)**，无需安装任何软件，打开即用。
+
 ## 🌟 功能特点
 
 ### 📖 核心功能
@@ -24,68 +26,70 @@
 
 ## 🚀 快速开始
 
-> 以下步骤面向零基础用户，按顺序操作即可在本地运行本项目。
+> 💡 **不想折腾？** 可以直接 [在线使用](https://henry1786580051-lang.github.io/english-test/)，无需安装。
+>
+> 以下步骤面向零基础用户，按操作系统分别说明。
 
-### 📋 前置准备
+### 🍎 macOS
 
-1. **安装 Node.js**（JavaScript 运行环境）
-   - 访问 [Node.js 官网](https://nodejs.org/)
-   - 下载 **LTS（长期支持版）** 并安装
-   - 安装完成后，打开终端（Mac 用「终端」，Windows 用「命令提示符」或 PowerShell），输入以下命令验证安装成功：
-     ```bash
-     node -v
-     ```
-     看到类似 `v20.x.x` 的版本号即表示安装成功
+#### 第一步：安装 Node.js
 
-2. **安装 pnpm**（包管理工具，比 npm 更快）
-   - 在终端中执行：
-     ```bash
-     npm install -g pnpm
-     ```
-   - 验证安装：
-     ```bash
-     pnpm -v
-     ```
-     看到版本号即可
+1. 打开 **Safari**，访问 [Node.js 官网](https://nodejs.org/)
+2. 下载 **LTS（长期支持版）** 安装包（`.pkg` 文件）
+3. 双击安装包，按提示完成安装
+4. 打开 **终端**（启动台 → 搜索「终端」或「Terminal」），输入：
+   ```bash
+   node -v
+   ```
+   看到类似 `v20.x.x` 的版本号即表示安装成功
 
-3. **安装 Git**（代码版本管理工具）
-   - 访问 [Git 官网](https://git-scm.com/) 下载并安装
-   - 验证安装：
-     ```bash
-     git --version
-     ```
+#### 第二步：安装 pnpm
 
-### 📥 下载项目
-
-在终端中依次执行：
+在终端中执行：
 
 ```bash
-# 1. 克隆项目到本地
+npm install -g pnpm
+```
+
+验证安装：
+
+```bash
+pnpm -v
+```
+
+#### 第三步：安装 Git
+
+macOS 通常自带 Git。在终端输入 `git --version`，如果提示安装开发者工具则按提示安装即可。
+
+#### 第四步：下载项目
+
+```bash
+# 克隆项目
 git clone https://github.com/henry1786580051-lang/english-test.git
 
-# 2. 进入项目目录
+# 进入项目目录
 cd english-test
 ```
 
-### 📦 安装依赖
+#### 第五步：安装依赖
 
 ```bash
 pnpm install
 ```
 
-> 💡 首次安装可能需要 1-3 分钟，取决于网络速度。如果安装失败，可以尝试设置镜像源：
+> 首次安装可能需要 1-3 分钟。如果安装失败，可以尝试设置国内镜像源：
 > ```bash
 > pnpm config set registry https://registry.npmmirror.com
 > pnpm install
 > ```
 
-### 🏃 启动开发服务器
+#### 第六步：启动
 
 ```bash
 pnpm dev
 ```
 
-终端会显示类似以下信息：
+终端会显示：
 ```
   VITE v8.x.x  ready in xxx ms
 
@@ -94,27 +98,97 @@ pnpm dev
 
 在浏览器中打开 **http://localhost:5173/** 即可使用。
 
-> 💡 保持终端窗口不要关闭，关闭终端会停止服务器。按 `Ctrl + C` 可主动停止。
+> 按 `Ctrl + C` 可停止服务器。
+
+---
+
+### 🪟 Windows
+
+#### 第一步：安装 Node.js
+
+1. 打开浏览器，访问 [Node.js 官网](https://nodejs.org/)
+2. 下载 **LTS（长期支持版）** 安装包（`.msi` 文件）
+3. 双击安装包，按提示一路「Next」完成安装
+4. 按 `Win + S`，搜索 **PowerShell** 并打开，输入：
+   ```bash
+   node -v
+   ```
+   看到类似 `v20.x.x` 的版本号即表示安装成功
+
+#### 第二步：安装 pnpm
+
+在 PowerShell 中执行：
+
+```bash
+npm install -g pnpm
+```
+
+验证安装：
+
+```bash
+pnpm -v
+```
+
+#### 第三步：安装 Git
+
+1. 访问 [Git 官网](https://git-scm.com/)，下载 Windows 版安装包
+2. 双击安装，按提示完成（全部默认选项即可）
+3. 安装完成后重新打开 PowerShell，输入 `git --version` 验证
+
+#### 第四步：下载项目
+
+```bash
+# 克隆项目
+git clone https://github.com/henry1786580051-lang/english-test.git
+
+# 进入项目目录
+cd english-test
+```
+
+#### 第五步：安装依赖
+
+```bash
+pnpm install
+```
+
+> 首次安装可能需要 1-3 分钟。如果安装失败，可以尝试设置国内镜像源：
+> ```bash
+> pnpm config set registry https://registry.npmmirror.com
+> pnpm install
+> ```
+
+#### 第六步：启动
+
+```bash
+pnpm dev
+```
+
+终端会显示：
+```
+  VITE v8.x.x  ready in xxx ms
+
+  ➜  Local:   http://localhost:5173/
+```
+
+在浏览器中打开 **http://localhost:5173/** 即可使用。
+
+> 按 `Ctrl + C` 可停止服务器。
+
+---
 
 ### 🔨 构建生产版本（可选）
-
-如果需要部署到服务器或生成静态文件：
 
 ```bash
 pnpm build
 ```
 
-构建产物会输出到 `dist/` 目录，可直接部署到任何静态托管服务。
+构建产物输出到 `dist/` 目录，可部署到任何静态托管服务。
 
 ### 👀 预览生产版本（可选）
-
-构建完成后，可以在本地预览生产版本效果：
 
 ```bash
 pnpm preview
 ```
-
-> 💡 这个项目也可以直接在线使用，无需安装：https://henry1786580051-lang.github.io/english-test/
 
 ## 📖 使用说明
 
