@@ -10,9 +10,12 @@
 
 > **👉 [点击这里直接在线使用](https://henry1786580051-lang.github.io/english-test/)**，无需安装任何软件，打开即用。
 
-<!-- 应用截图（请替换为实际截图） -->
 <p align="center">
-  <img src="screenshots/home.png" alt="应用首页" width="80%" />
+  <img src="screenshots/home.png" alt="应用首页" width="45%" />
+  <img src="screenshots/unit-select.png" alt="单元选择" width="45%" />
+</p>
+<p align="center">
+  <img src="screenshots/testing.png" alt="测试中" width="45%" />
 </p>
 
 ## 📑 目录
