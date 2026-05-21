@@ -18,7 +18,7 @@ export default defineConfig({
         background_color: '#F5F0EA',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: process.env.VERCEL ? '/' : '/english-test/',
         icons: [
           {
             src: 'icon-192.png',

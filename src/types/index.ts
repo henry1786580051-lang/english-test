@@ -1,5 +1,5 @@
 /** 词性缩写字面量类型 */
-export type PartOfSpeech = 'n.' | 'v.' | 'adj.' | 'adv.' | 'pron.' | 'prep.' | 'conj.' | 'art.' | 'int.' | 'num.' | string;
+export type PartOfSpeech = 'n.' | 'v.' | 'adj.' | 'adv.' | 'pron.' | 'prep.' | 'conj.' | 'art.' | 'int.' | 'num.';
 
 export interface Word {
   english: string;

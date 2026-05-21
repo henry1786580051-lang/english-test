@@ -49,10 +49,10 @@
   --space-xl: 32px;
   --space-2xl: 48px;
 
-  /* ---- Radii ---- */
-  --radius-sm: 6px;
+  /* ---- Radii (Apple-style continuous corner radius) ---- */
+  --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-lg: 20px;
   --radius-full: 9999px;
 
   /* ---- Transitions ---- */

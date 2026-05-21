@@ -11,7 +11,9 @@ interface TestResultProps {
 }
 
 export function TestResult({ result, onRetry, onBackToSelect }: TestResultProps) {
-  const accuracy = Math.round((result.correctAnswers / result.totalQuestions) * 100);
+  const accuracy = result.totalQuestions > 0
+    ? Math.round((result.correctAnswers / result.totalQuestions) * 100)
+    : 0;
 
   return (
     <div className="test-result">
@@ -62,3 +64,5 @@ export function TestResult({ result, onRetry, onBackToSelect }: TestResultProps)
     </div>
   );
 }
+
+TestResult.displayName = 'TestResult';

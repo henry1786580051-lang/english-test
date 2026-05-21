@@ -3,17 +3,17 @@
  * 按年级→单元分组展示错词，支持删除单条记录和发起错题测试。
  */
 import { useMemo } from 'react';
-import type { WrongWord } from '../types';
+import type { WrongWord, Word } from '../types';
 
 interface WrongWordsProps {
   wrongWords: WrongWord[];
   onTestWrongWords: () => void;
-  onDeleteWrongWord: (index: number) => void;
+  onDeleteWrongWord: (word: Word) => void;
 }
 
 interface GroupedWords {
   [gradeVolume: string]: {
-    [unit: string]: { item: WrongWord; originalIndex: number }[];
+    [unit: string]: WrongWord[];
   };
 }
 
@@ -22,16 +22,16 @@ export function WrongWords({ wrongWords, onTestWrongWords, onDeleteWrongWord }: 
   const grouped = useMemo<GroupedWords>(() => {
     const result: GroupedWords = {};
 
-    wrongWords.forEach((item, index) => {
+    wrongWords.forEach(item => {
       const gradeVolume = `${item.grade}${item.volume}`;
       if (!result[gradeVolume]) result[gradeVolume] = {};
       if (!result[gradeVolume][item.unit]) result[gradeVolume][item.unit] = [];
-      result[gradeVolume][item.unit].push({ item, originalIndex: index });
+      result[gradeVolume][item.unit].push(item);
     });
 
     for (const gradeVolume of Object.keys(result)) {
       for (const unit of Object.keys(result[gradeVolume])) {
-        result[gradeVolume][unit].sort((a, b) => b.item.count - a.item.count);
+        result[gradeVolume][unit].sort((a, b) => b.count - a.count);
       }
     }
 
@@ -64,8 +64,8 @@ export function WrongWords({ wrongWords, onTestWrongWords, onDeleteWrongWord }: 
             <div key={unit} className="wrong-words-unit">
               <h4 className="unit-title">{unit}</h4>
               <div className="wrong-words-list">
-                {words.map(({ item, originalIndex }) => (
-                  <div key={`${item.word.english}-${item.word.chinese}-${originalIndex}`} className="wrong-word-item">
+                {words.map(item => (
+                  <div key={`${item.word.english}-${item.word.chinese}`} className="wrong-word-item">
                     <div className="word-info">
                       <span className="english">
                         {item.word.english}
@@ -77,7 +77,7 @@ export function WrongWords({ wrongWords, onTestWrongWords, onDeleteWrongWord }: 
                       <span className="count">错误 {item.count} 次</span>
                       <button
                         className="delete-btn"
-                        onClick={() => onDeleteWrongWord(originalIndex)}
+                        onClick={() => onDeleteWrongWord(item.word)}
                         title="从错题本中移除"
                       >
                         ✕
@@ -93,3 +93,5 @@ export function WrongWords({ wrongWords, onTestWrongWords, onDeleteWrongWord }: 
     </div>
   );
 }
+
+WrongWords.displayName = 'WrongWords';

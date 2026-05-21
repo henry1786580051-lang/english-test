@@ -346,8 +346,22 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
       </div>
 
       {hasChecked && (
-        <div className="vocab-test-bar">
-          <button className="btn btn-primary" onClick={handleTest}>
+        <div className="tab-bar-inner" style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '88px',
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          borderTop: '0.5px solid rgba(0, 0, 0, 0.08)',
+        }}>
+          <button className="tab-start-btn" onClick={handleTest}>
             测试选中词汇 ({selectedWords.size})
           </button>
         </div>
@@ -355,3 +369,5 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
     </div>
   );
 }
+
+VocabularyList.displayName = 'VocabularyList';

@@ -22,6 +22,87 @@ interface TestModeProps {
   confusingWords?: Record<string, string[]>;
 }
 
+/** 从词库生成测试题目（纯函数，便于测试） */
+function generateQuestions(
+  units: Unit[],
+  testMode: 'chineseToEnglish' | 'englishToChinese',
+  optionPool: Word[],
+  difficulty: Difficulty,
+  confusingWordsMap?: Record<string, string[]>,
+): TestQuestion[] {
+  const testWords = units.flatMap(u => u.words);
+  const shuffledWords = shuffle(testWords);
+  const isChineseToEnglish = testMode === 'chineseToEnglish';
+
+  return shuffledWords.map(word => {
+    const correctAnswer = isChineseToEnglish ? word.english : word.chinese;
+    let wrongOptions: string[];
+
+    if (difficulty === 'hard' && isChineseToEnglish && confusingWordsMap) {
+      const confusingList = confusingWordsMap[word.english] ?? [];
+      const fromConfusing = shuffle(confusingList).slice(0, 3);
+      if (fromConfusing.length < 3) {
+        const need = 3 - fromConfusing.length;
+        const samePos = optionPool.filter(w =>
+          w.english !== word.english &&
+          w.partOfSpeech === word.partOfSpeech &&
+          !fromConfusing.includes(w.english)
+        );
+        const fallback = shuffle(samePos.length >= need ? samePos : optionPool.filter(w =>
+          w.english !== word.english && !fromConfusing.includes(w.english)
+        )).slice(0, need).map(w => w.english);
+        wrongOptions = shuffle([...fromConfusing, ...fallback]);
+      } else {
+        wrongOptions = fromConfusing;
+      }
+    } else if (difficulty === 'hard' && !isChineseToEnglish && confusingWordsMap) {
+      const confusingList = confusingWordsMap[word.english] ?? [];
+      const confusingChinese: string[] = [];
+      for (const ce of confusingList) {
+        const cw = optionPool.find(w => w.english === ce);
+        if (cw && cw.chinese !== word.chinese) {
+          confusingChinese.push(cw.chinese);
+        }
+      }
+      const fromConfusing = shuffle(confusingChinese).slice(0, 3);
+      if (fromConfusing.length < 3) {
+        const need = 3 - fromConfusing.length;
+        const samePos = optionPool.filter(w =>
+          w.chinese !== word.chinese &&
+          w.partOfSpeech === word.partOfSpeech &&
+          !fromConfusing.includes(w.chinese)
+        );
+        const fallback = shuffle(samePos.length >= need ? samePos : optionPool.filter(w =>
+          w.chinese !== word.chinese && !fromConfusing.includes(w.chinese)
+        )).slice(0, need).map(w => w.chinese);
+        wrongOptions = shuffle([...fromConfusing, ...fallback]);
+      } else {
+        wrongOptions = fromConfusing;
+      }
+    } else {
+      const wrongWords = optionPool.filter(w =>
+        (isChineseToEnglish ? w.english : w.chinese) !== correctAnswer
+      );
+      wrongOptions = shuffle(wrongWords).slice(0, 3).map(w =>
+        isChineseToEnglish ? w.english : w.chinese
+      );
+    }
+
+    const uniqueWrong = [...new Set(wrongOptions.filter(o => o !== correctAnswer))];
+    while (uniqueWrong.length < 3) {
+      const filler = optionPool.find(w =>
+        (isChineseToEnglish ? w.english : w.chinese) !== correctAnswer &&
+        !uniqueWrong.includes(isChineseToEnglish ? w.english : w.chinese)
+      );
+      if (filler) uniqueWrong.push(isChineseToEnglish ? filler.english : filler.chinese);
+      else break;
+    }
+    const options = shuffle([correctAnswer, ...uniqueWrong.slice(0, 3)]);
+
+    return { word, options, correctAnswer, isChineseToEnglish };
+  });
+}
+
 export function TestMode({
   units,
   testMode,
@@ -41,11 +122,9 @@ export function TestMode({
   const [correctWords, setCorrectWords] = useState<Word[]>(savedState?.correctWords ?? []);
   const [incorrectWords, setIncorrectWords] = useState<Word[]>(savedState?.incorrectWords ?? []);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState<{ index: number; isCorrect: boolean } | null>(null);
   const questionsGenerated = useRef(!!savedState);
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const feedbackBtnRef = useRef<HTMLButtonElement | null>(null);
-
-  // 用 ref 同步最新状态，供 setTimeout 回调读取（避免闭包过期）
   const stateRef = useRef({ correctWords, incorrectWords, currentIndex });
   useEffect(() => {
     stateRef.current = { correctWords, incorrectWords, currentIndex };
@@ -53,25 +132,32 @@ export function TestMode({
 
   const isTestingWrongWords = units.length === 1 && units[0].unit === '错题本';
 
-  /** 构建当前测试快照，用于退出时保存或定期持久化 */
-  const buildSnapshot = useCallback((): SavedTestState => ({
-    questions,
-    currentIndex: stateRef.current.currentIndex,
-    correctWords: stateRef.current.correctWords,
-    incorrectWords: stateRef.current.incorrectWords,
-    testMode,
-    unitNames: units.map(u => u.unit),
-    grade,
-    volume,
-    isTestingWrongWords,
-    difficulty,
-  }), [questions, testMode, units, grade, volume, isTestingWrongWords, difficulty]);
+  // 生成题目（仅执行一次，有保存状态时跳过）
+  useEffect(() => {
+    if (questionsGenerated.current) return;
+    const optionPool = allWordsProp && allWordsProp.length > 0 ? allWordsProp : units.flatMap(u => u.words);
+    setQuestions(generateQuestions(units, testMode, optionPool, difficulty, confusingWordsMap));
+    questionsGenerated.current = true;
+  }, [units, testMode, allWordsProp, difficulty, confusingWordsMap]);
 
+  // 保存测试进度
   useEffect(() => {
     if (questions.length > 0 && onSaveState) {
-      onSaveState(buildSnapshot());
+      const { correctWords: c, incorrectWords: ic, currentIndex: idx } = stateRef.current;
+      onSaveState({
+        questions,
+        currentIndex: idx,
+        correctWords: c,
+        incorrectWords: ic,
+        testMode,
+        unitNames: units.map(u => u.unit),
+        grade,
+        volume,
+        isTestingWrongWords,
+        difficulty,
+      });
     }
-  }, [correctWords.length, incorrectWords.length, currentIndex, questions.length, onSaveState, buildSnapshot]);
+  }, [correctWords.length, incorrectWords.length, currentIndex, questions.length, onSaveState, questions, testMode, units, grade, volume, isTestingWrongWords, difficulty]);
 
   useEffect(() => {
     return () => {
@@ -79,155 +165,15 @@ export function TestMode({
     };
   }, []);
 
-  // 题目切换后，强制清除所有选项按钮的反馈样式（移动端兼容）
-  useEffect(() => {
-    const btns = document.querySelectorAll('.options .option');
-    btns.forEach(btn => {
-      btn.classList.remove('correct', 'incorrect');
-      (btn as HTMLButtonElement).style.backgroundColor = '';
-      (btn as HTMLButtonElement).style.borderColor = '';
-      (btn as HTMLButtonElement).style.color = '';
-    });
-  }, [currentIndex]);
-
-  // 生成题目（仅执行一次，有保存状态时跳过）
-  useEffect(() => {
-    if (questionsGenerated.current) return;
-
-    const testWords = units.flatMap(u => u.words);
-    const shuffledWords = shuffle(testWords);
-    const isChineseToEnglish = testMode === 'chineseToEnglish';
-    // 干扰项来源：优先使用全量词库，否则使用当前测试词库
-    const optionPool = allWordsProp && allWordsProp.length > 0 ? allWordsProp : testWords;
-
-    const newQuestions: TestQuestion[] = shuffledWords.map(word => {
-      const correctAnswer = isChineseToEnglish ? word.english : word.chinese;
-
-      let wrongOptions: string[];
-
-      if (difficulty === 'hard' && isChineseToEnglish && confusingWordsMap) {
-        const confusingList = confusingWordsMap[word.english] ?? [];
-        const fromConfusing = shuffle(confusingList).slice(0, 3);
-        if (fromConfusing.length < 3) {
-          const need = 3 - fromConfusing.length;
-          const samePos = optionPool.filter(w =>
-            w.english !== word.english &&
-            w.partOfSpeech === word.partOfSpeech &&
-            !fromConfusing.includes(w.english)
-          );
-          const fallback = shuffle(samePos.length >= need ? samePos : optionPool.filter(w =>
-            w.english !== word.english && !fromConfusing.includes(w.english)
-          )).slice(0, need).map(w => w.english);
-          wrongOptions = shuffle([...fromConfusing, ...fallback]);
-        } else {
-          wrongOptions = fromConfusing;
-        }
-      } else if (difficulty === 'hard' && !isChineseToEnglish && confusingWordsMap) {
-        const confusingList = confusingWordsMap[word.english] ?? [];
-        const confusingChinese: string[] = [];
-        for (const ce of confusingList) {
-          const cw = optionPool.find(w => w.english === ce);
-          if (cw && cw.chinese !== word.chinese) {
-            confusingChinese.push(cw.chinese);
-          }
-        }
-        const fromConfusing = shuffle(confusingChinese).slice(0, 3);
-        if (fromConfusing.length < 3) {
-          const need = 3 - fromConfusing.length;
-          const samePos = optionPool.filter(w =>
-            w.chinese !== word.chinese &&
-            w.partOfSpeech === word.partOfSpeech &&
-            !fromConfusing.includes(w.chinese)
-          );
-          const fallback = shuffle(samePos.length >= need ? samePos : optionPool.filter(w =>
-            w.chinese !== word.chinese && !fromConfusing.includes(w.chinese)
-          )).slice(0, need).map(w => w.chinese);
-          wrongOptions = shuffle([...fromConfusing, ...fallback]);
-        } else {
-          wrongOptions = fromConfusing;
-        }
-      } else {
-        const wrongWords = optionPool.filter(w =>
-          (isChineseToEnglish ? w.english : w.chinese) !== correctAnswer
-        );
-        wrongOptions = shuffle(wrongWords).slice(0, 3).map(w =>
-          isChineseToEnglish ? w.english : w.chinese
-        );
-      }
-
-      const uniqueWrong = [...new Set(wrongOptions.filter(o => o !== correctAnswer))];
-      while (uniqueWrong.length < 3) {
-        const filler = optionPool.find(w =>
-          (isChineseToEnglish ? w.english : w.chinese) !== correctAnswer &&
-          !uniqueWrong.includes(isChineseToEnglish ? w.english : w.chinese)
-        );
-        if (filler) uniqueWrong.push(isChineseToEnglish ? filler.english : filler.chinese);
-        else break;
-      }
-      const options = shuffle([correctAnswer, ...uniqueWrong.slice(0, 3)]);
-
-      return {
-        word,
-        options,
-        correctAnswer,
-        isChineseToEnglish,
-      };
-    });
-
-    setQuestions(newQuestions);
-    questionsGenerated.current = true;
-  }, [units, savedState, testMode, allWordsProp, difficulty, confusingWordsMap]);
-
-  /**
-   * 前进到下一题
-   * 延迟 800ms 让用户看到反馈动画，然后清除 DOM 样式并切题。
-   * 使用 stateRef 读取最新状态，避免闭包过期。
-   */
-  const advance = useCallback((isCorrect: boolean, word: Word) => {
-    const { correctWords: c, incorrectWords: ic, currentIndex: idx } = stateRef.current;
-    const nextCorrect = isCorrect ? [...c, word] : c;
-    const nextIncorrect = isCorrect ? ic : [...ic, word];
-
-    advanceTimeoutRef.current = setTimeout(() => {
-      // 清除按钮 DOM 上的反馈样式（inline style + class），解决移动端样式残留问题
-      const btn = feedbackBtnRef.current;
-      if (btn) {
-        btn.classList.remove('correct', 'incorrect');
-        btn.style.borderColor = '';
-        btn.style.backgroundColor = '';
-        btn.style.color = '';
-      }
-      feedbackBtnRef.current = null;
-
-      if (idx < questions.length - 1) {
-        setCurrentIndex(prev => prev + 1);
-        setIsAnswered(false);
-      } else {
-        onTestComplete(nextCorrect, nextIncorrect);
-      }
-    }, 800);
-  }, [questions.length, onTestComplete]);
-
-  /** 处理用户选择答案：添加反馈样式、记录结果、延迟切题 */
-  const handleAnswer = useCallback((answer: string, btn: HTMLButtonElement) => {
+  /** 处理用户选择答案 */
+  const handleAnswer = useCallback((answerIndex: number) => {
     if (isAnswered) return;
-    setIsAnswered(true);
-
     const currentQuestion = questions[currentIndex];
+    const answer = currentQuestion.options[answerIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
 
-    // 同时使用 class（CSS 动画）和 inline style（颜色兜底），确保移动端反馈正确显示
-    btn.classList.add(isCorrect ? 'correct' : 'incorrect');
-    if (isCorrect) {
-      btn.style.borderColor = 'var(--color-correct)';
-      btn.style.backgroundColor = 'var(--color-correct-subtle)';
-      btn.style.color = 'var(--color-correct)';
-    } else {
-      btn.style.borderColor = 'var(--color-incorrect)';
-      btn.style.backgroundColor = 'var(--color-incorrect-subtle)';
-      btn.style.color = 'var(--color-incorrect)';
-    }
-    feedbackBtnRef.current = btn;
+    setIsAnswered(true);
+    setSelectedAnswer({ index: answerIndex, isCorrect });
 
     if (isCorrect) {
       setCorrectWords(prev => [...prev, currentQuestion.word]);
@@ -236,20 +182,40 @@ export function TestMode({
       onWrongWord?.(currentQuestion.word);
     }
 
-    advance(isCorrect, currentQuestion.word);
-  }, [isAnswered, questions, currentIndex, onWrongWord, advance]);
+    advanceTimeoutRef.current = setTimeout(() => {
+      setSelectedAnswer(null);
+      const { correctWords: c, incorrectWords: ic, currentIndex: idx } = stateRef.current;
+      if (idx < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        setIsAnswered(false);
+      } else {
+        const nextCorrect = isCorrect ? [...c, currentQuestion.word] : c;
+        const nextIncorrect = isCorrect ? ic : [...ic, currentQuestion.word];
+        onTestComplete(nextCorrect, nextIncorrect);
+      }
+    }, 800);
+  }, [isAnswered, questions, currentIndex, onWrongWord, onTestComplete]);
 
-  /** 用户点击「我不知道」：直接记为错误并前进 */
+  /** 用户点击「我不知道」 */
   const handleDontKnow = useCallback(() => {
     if (isAnswered) return;
-    setIsAnswered(true);
-
     const currentQuestion = questions[currentIndex];
+
+    setIsAnswered(true);
     setIncorrectWords(prev => [...prev, currentQuestion.word]);
     onWrongWord?.(currentQuestion.word);
 
-    advance(false, currentQuestion.word);
-  }, [isAnswered, questions, currentIndex, onWrongWord, advance]);
+    advanceTimeoutRef.current = setTimeout(() => {
+      setSelectedAnswer(null);
+      const { correctWords: c, incorrectWords: ic, currentIndex: idx } = stateRef.current;
+      if (idx < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        setIsAnswered(false);
+      } else {
+        onTestComplete(c, [...ic, currentQuestion.word]);
+      }
+    }, 800);
+  }, [isAnswered, questions, currentIndex, onWrongWord, onTestComplete]);
 
   // 键盘快捷键：数字键 1-4 选择选项，0 键表示「我不知道」
   useEffect(() => {
@@ -260,9 +226,7 @@ export function TestMode({
         const index = parseInt(key) - 1;
         const currentQ = questions[currentIndex];
         if (currentQ && index < currentQ.options.length) {
-          const btns = document.querySelectorAll('.options .option');
-          const btn = btns[index] as HTMLButtonElement;
-          if (btn) handleAnswer(currentQ.options[index], btn);
+          handleAnswer(index);
         }
       } else if (key === '0') {
         handleDontKnow();
@@ -274,7 +238,18 @@ export function TestMode({
 
   const handleQuit = () => {
     if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
-    onQuit(buildSnapshot());
+    onQuit({
+      questions,
+      currentIndex,
+      correctWords,
+      incorrectWords,
+      testMode,
+      unitNames: units.map(u => u.unit),
+      grade,
+      volume,
+      isTestingWrongWords,
+      difficulty,
+    });
   };
 
   if (questions.length === 0) {
@@ -312,16 +287,21 @@ export function TestMode({
         </div>
 
         <div className="options">
-          {currentQuestion.options.map((option, index) => (
-            <button
-              key={index}
-              className="option"
-              onClick={(e) => handleAnswer(option, e.currentTarget)}
-              disabled={isAnswered}
-            >
-              {option}
-            </button>
-          ))}
+          {currentQuestion.options.map((option, index) => {
+            const feedbackClass = selectedAnswer?.index === index
+              ? (selectedAnswer.isCorrect ? 'correct' : 'incorrect')
+              : '';
+            return (
+              <button
+                key={index}
+                className={`option ${feedbackClass}`}
+                onClick={() => handleAnswer(index)}
+                disabled={isAnswered}
+              >
+                {option}
+              </button>
+            );
+          })}
         </div>
 
         <button
@@ -340,3 +320,5 @@ export function TestMode({
     </div>
   );
 }
+
+TestMode.displayName = 'TestMode';

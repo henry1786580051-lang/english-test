@@ -2,7 +2,7 @@
  * 应用根组件
  * 管理全局视图路由、测试状态、错题本持久化。
  */
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import wordsData from './data/words.json';
 import confusingWordsData from './data/confusingWords.json';
 import type { Textbook, Unit, Word, TestResult, WrongWord, SavedTestState, Difficulty } from './types';
@@ -11,6 +11,7 @@ import { TestMode } from './components/TestMode';
 import { TestResult as TestResultComponent } from './components/TestResult';
 import { WrongWords } from './components/WrongWords';
 import { VocabularyList } from './components/VocabularyList';
+import { LiquidGlass } from './components/LiquidGlass';
 import { findWordLocation } from './utils';
 import './styles/App.css';
 
@@ -20,11 +21,28 @@ type TestModeType = 'chineseToEnglish' | 'englishToChinese';
 const textbooks = wordsData as Textbook[];
 const confusingWords = confusingWordsData as Record<string, string[]>;
 
+/** 全量单词池（模块常量，不需要 useMemo） */
+const allWords = textbooks.flatMap(tb => tb.units.flatMap(u => u.words));
+
+/** 校验保存的测试状态是否有效 */
+function isValidSavedState(state: SavedTestState): boolean {
+  return (
+    Array.isArray(state.questions) &&
+    state.questions.length > 0 &&
+    typeof state.currentIndex === 'number' &&
+    state.currentIndex >= 0 &&
+    state.currentIndex < state.questions.length &&
+    Array.isArray(state.correctWords) &&
+    Array.isArray(state.incorrectWords)
+  );
+}
+
 function App() {
   const [currentView, setCurrentView] = useState<View>('select');
   const [selectedUnits, setSelectedUnits] = useState<Unit[]>([]);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
-  // 使用惰性初始化从 localStorage 加载错题本
+  const [selectedUnitCount, setSelectedUnitCount] = useState(0);
+  const startTestRef = useRef<() => void>(() => {});
   const [wrongWords, setWrongWords] = useState<WrongWord[]>(() => {
     try {
       const saved = localStorage.getItem('wrongWords');
@@ -40,7 +58,9 @@ function App() {
   const [savedTestState, setSavedTestState] = useState<SavedTestState | null>(() => {
     try {
       const saved = localStorage.getItem('savedTestState');
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      return isValidSavedState(parsed) ? parsed : null;
     } catch {
       return null;
     }
@@ -52,12 +72,21 @@ function App() {
   const [selectedVolume, setSelectedVolume] = useState('');
   const [toast, setToast] = useState<string | null>(null);
 
-  // 全量单词池，用于测试时生成干扰项
-  const allWords = useMemo(() =>
-    textbooks.flatMap(tb => tb.units.flatMap(u => u.words)),
-  []);
+  // 底栏 indicator 位置
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const tabBarRef = useRef<HTMLElement>(null);
 
-  // 错题本变化时持久化（捕获配额超出异常）
+  // 底栏 indicator 定位
+  useEffect(() => {
+    const el = tabBarRef.current;
+    if (!el) return;
+    const activeBtn = el.querySelector('.tab-item.active') as HTMLElement;
+    if (activeBtn) {
+      setIndicatorStyle({ left: activeBtn.offsetLeft, width: activeBtn.offsetWidth });
+    }
+  }, [currentView, selectedUnitCount]);
+
+  // 错题本变化时持久化
   useEffect(() => {
     try {
       localStorage.setItem('wrongWords', JSON.stringify(wrongWords));
@@ -89,16 +118,16 @@ function App() {
     return { grade: '', volume: '' };
   }, []);
 
-  const handleUnitsSelected = (units: Unit[]) => {
+  const handleUnitsSelected = useCallback((units: Unit[]) => {
     setSelectedUnits(units);
     setRetryUnits(units);
     const { grade, volume } = findUnitGradeVolume(units);
     setSelectedGrade(grade);
     setSelectedVolume(volume);
     setCurrentView('modeSelect');
-  };
+  }, [findUnitGradeVolume]);
 
-  const handleModeSelected = (mode: TestModeType) => {
+  const handleModeSelected = useCallback((mode: TestModeType) => {
     if (savedTestState) {
       setPendingAction('newTest');
       setPendingMode(mode);
@@ -107,9 +136,9 @@ function App() {
     }
     setTestMode(mode);
     setCurrentView('test');
-  };
+  }, [savedTestState]);
 
-  const handleConfirmDiscard = () => {
+  const handleConfirmDiscard = useCallback(() => {
     setShowConfirmDialog(false);
     setSavedTestState(null);
     const action = pendingAction;
@@ -122,9 +151,9 @@ function App() {
       setPendingMode(null);
       setCurrentView('test');
     }
-  };
+  }, [pendingAction, pendingMode]);
 
-  const handleConfirmKeep = () => {
+  const handleConfirmKeep = useCallback(() => {
     setShowConfirmDialog(false);
     setPendingMode(null);
     setPendingAction(null);
@@ -135,51 +164,36 @@ function App() {
       setDifficulty(savedTestState.difficulty);
     }
     setCurrentView('test');
-  };
+  }, [savedTestState]);
 
-  const handleCancelDialog = () => {
+  const handleCancelDialog = useCallback(() => {
     setShowConfirmDialog(false);
     setPendingMode(null);
     setPendingAction(null);
-  };
+  }, []);
 
-  /** 测试完成：记录成绩并跳转结果页 */
-  const handleTestComplete = useCallback((correctWords: Word[], incorrectWords: Word[]) => {
+  /** 测试完成：记录成绩并跳转结果页（普通测试和错题测试共用） */
+  const handleTestComplete = useCallback((correctWordsResult: Word[], incorrectWordsResult: Word[]) => {
     setTestResult({
-      totalQuestions: correctWords.length + incorrectWords.length,
-      correctAnswers: correctWords.length,
-      incorrectWords,
+      totalQuestions: correctWordsResult.length + incorrectWordsResult.length,
+      correctAnswers: correctWordsResult.length,
+      incorrectWords: incorrectWordsResult,
       timestamp: Date.now(),
     });
     setSavedTestState(null);
+    setIsTestingWrongWords(false);
     setCurrentView('result');
   }, []);
 
-  /** 退出测试：保存当前进度 */
+  /** 保存测试进度（含退出跳转） */
+  const handleSaveTestState = useCallback((state: SavedTestState) => {
+    setSavedTestState(state);
+  }, []);
+
+  /** 退出测试：保存并返回选择页 */
   const handleQuitTest = useCallback((state: SavedTestState) => {
     setSavedTestState(state);
     setCurrentView('select');
-  }, []);
-
-  /** 重试：回到模式选择页，沿用上次的单元 */
-  const handleRetry = () => {
-    setRetryUnits([...selectedUnits]);
-    setCurrentView('modeSelect');
-  };
-
-  const handleBackToSelect = () => {
-    if (currentView === 'test' && savedTestState) {
-      setPendingAction('newTest');
-      setShowConfirmDialog(true);
-      return;
-    }
-    setCurrentView('select');
-    setTestResult(null);
-  };
-
-  /** 保存测试进度（由 TestMode 调用） */
-  const handleSaveTestState = useCallback((state: SavedTestState) => {
-    setSavedTestState(state);
   }, []);
 
   /** 记录错词，若已存在则累加错误次数 */
@@ -204,20 +218,30 @@ function App() {
     });
   }, []);
 
-  const handleShowWrongWords = () => setCurrentView('wrongWords');
-  const handleBackFromWrongWords = () => setCurrentView('select');
-  const handleShowVocabulary = () => setCurrentView('vocabulary');
+  const handleBackToSelect = useCallback(() => {
+    if (currentView === 'test' && savedTestState) {
+      setPendingAction('newTest');
+      setShowConfirmDialog(true);
+      return;
+    }
+    setCurrentView('select');
+    setTestResult(null);
+  }, [currentView, savedTestState]);
 
-  const handleVocabTestWords = (words: Word[], grade: string, volume: string, unitName: string) => {
+  const handleShowWrongWords = useCallback(() => setCurrentView('wrongWords'), []);
+  const handleBackFromWrongWords = useCallback(() => setCurrentView('select'), []);
+  const handleShowVocabulary = useCallback(() => setCurrentView('vocabulary'), []);
+
+  const handleVocabTestWords = useCallback((words: Word[], grade: string, volume: string, unitName: string) => {
     const unit: Unit = { unit: unitName, words };
     setSelectedUnits([unit]);
     setRetryUnits([unit]);
     setSelectedGrade(grade);
     setSelectedVolume(volume);
     setCurrentView('modeSelect');
-  };
+  }, []);
 
-  const handleTestWrongWords = () => {
+  const handleTestWrongWords = useCallback(() => {
     if (savedTestState) {
       setPendingAction('wrongWords');
       setPendingMode(null);
@@ -226,11 +250,14 @@ function App() {
     }
     setIsTestingWrongWords(true);
     setCurrentView('modeSelect');
-  };
+  }, [savedTestState]);
 
-  const handleDeleteWrongWord = (index: number) => {
-    setWrongWords(prev => prev.filter((_, i) => i !== index));
-  };
+  /** 按 Word 匹配删除错词（而非 index） */
+  const handleDeleteWrongWord = useCallback((word: Word) => {
+    setWrongWords(prev => prev.filter(w =>
+      !(w.word.english === word.english && w.word.chinese === word.chinese)
+    ));
+  }, []);
 
   // toast 自动消失
   useEffect(() => {
@@ -239,7 +266,7 @@ function App() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     const data = {
       version: 1,
       exportedAt: new Date().toISOString(),
@@ -253,9 +280,9 @@ function App() {
     a.click();
     URL.revokeObjectURL(url);
     setToast('数据已导出');
-  };
+  }, [wrongWords]);
 
-  const handleImport = () => {
+  const handleImport = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -322,60 +349,31 @@ function App() {
       reader.readAsText(file);
     };
     input.click();
-  };
-
-  /** 错题测试完成：与普通测试完成逻辑类似，额外重置错题测试标记 */
-  const handleWrongWordsTestComplete = useCallback((correctWords: Word[], incorrectWords: Word[]) => {
-    setTestResult({
-      totalQuestions: correctWords.length + incorrectWords.length,
-      correctAnswers: correctWords.length,
-      incorrectWords,
-      timestamp: Date.now(),
-    });
-    setSavedTestState(null);
-    setIsTestingWrongWords(false);
-    setCurrentView('result');
-  }, []);
+  }, [wrongWords]);
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <div className="nav-main">
-          <button
-            onClick={handleBackToSelect}
-            className={`nav-button ${currentView === 'select' ? 'active' : ''}`}
-          >
-            选择单元
-          </button>
-          <button
-            onClick={handleShowWrongWords}
-            className={`nav-button ${currentView === 'wrongWords' ? 'active' : ''}`}
-          >
-            错题本 {wrongWords.length > 0 && `(${wrongWords.length})`}
-          </button>
-          <button
-            onClick={handleShowVocabulary}
-            className={`nav-button ${currentView === 'vocabulary' ? 'active' : ''}`}
-          >
-            词汇表
-          </button>
-        </div>
-        <div className="nav-actions">
-          <button onClick={handleExport} className="nav-icon-btn" title="导出数据">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-          </button>
-          <button onClick={handleImport} className="nav-icon-btn" title="导入数据">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-          </button>
-        </div>
-      </nav>
+      {/* 右上角导出导入按钮 */}
+      <div className="top-actions">
+        <button onClick={handleExport} className="icon-btn" title="导出数据">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <button onClick={handleImport} className="icon-btn" title="导入数据">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </button>
+      </div>
 
       {currentView === 'select' && (
-        <UnitSelector textbooks={textbooks} onUnitsSelected={handleUnitsSelected} />
+        <UnitSelector
+          textbooks={textbooks}
+          onUnitsSelected={handleUnitsSelected}
+          onSelectedCountChange={setSelectedUnitCount}
+          onStartTestRef={fn => { startTestRef.current = fn; }}
+        />
       )}
 
       {currentView === 'modeSelect' && (
@@ -453,7 +451,7 @@ function App() {
             : (retryUnits.length > 0 ? retryUnits : selectedUnits)
           }
           testMode={testMode}
-          onTestComplete={isTestingWrongWords ? handleWrongWordsTestComplete : handleTestComplete}
+          onTestComplete={handleTestComplete}
           onQuit={handleQuitTest}
           savedState={savedTestState}
           grade={selectedGrade}
@@ -469,7 +467,7 @@ function App() {
       {currentView === 'result' && testResult && (
         <TestResultComponent
           result={testResult}
-          onRetry={handleRetry}
+          onRetry={() => { setRetryUnits([...selectedUnits]); setCurrentView('modeSelect'); }}
           onBackToSelect={handleBackToSelect}
         />
       )}
@@ -498,6 +496,56 @@ function App() {
         <VocabularyList textbooks={textbooks} onTestWords={handleVocabTestWords} />
       )}
 
+      {/* iOS 26 液态玻璃底栏 */}
+      {(currentView === 'select' || currentView === 'modeSelect' || currentView === 'wrongWords' || currentView === 'vocabulary') && (
+        <div className="tab-bar-shell">
+          <LiquidGlass style={{ height: 56, borderRadius: 28 }}>
+            <nav className="tab-bar-pill" ref={tabBarRef}>
+              <div
+                className="tab-indicator"
+                style={{ left: indicatorStyle.left, width: indicatorStyle.width }}
+              />
+              <button
+                onClick={handleBackToSelect}
+                className={`tab-item ${currentView === 'select' ? 'active' : ''}`}
+              >
+                <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+                <span className="tab-label">选择</span>
+              </button>
+              {currentView === 'select' && selectedUnitCount > 0 && (
+                <button
+                  className="tab-start-btn-inline"
+                  onClick={() => startTestRef.current()}
+                >
+                  开始测试 ({selectedUnitCount})
+                </button>
+              )}
+              <button
+                onClick={handleShowWrongWords}
+                className={`tab-item ${currentView === 'wrongWords' ? 'active' : ''}`}
+              >
+                <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span className="tab-label">错题本</span>
+                {wrongWords.length > 0 && <span className="tab-badge">{wrongWords.length}</span>}
+              </button>
+              <button
+                onClick={handleShowVocabulary}
+                className={`tab-item ${currentView === 'vocabulary' ? 'active' : ''}`}
+              >
+                <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                <span className="tab-label">词汇表</span>
+              </button>
+            </nav>
+          </LiquidGlass>
+        </div>
+      )}
+
       {showConfirmDialog && (
         <div className="dialog-overlay" onClick={handleCancelDialog}>
           <div className="dialog" onClick={e => e.stopPropagation()}>
@@ -521,5 +569,7 @@ function App() {
     </div>
   );
 }
+
+App.displayName = 'App';
 
 export default App;
