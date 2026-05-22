@@ -4,22 +4,20 @@
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { loadAllTextbooks } from './data';
-import confusingWordsData from './data/confusingWords.json';
-import type { Textbook, Unit, Word, TestResult, WrongWord, SavedTestState, Difficulty } from './types';
+import type { Textbook, Unit, Word, TestResult, WrongWord, SavedTestState, Difficulty, TestModeType } from './types';
 import { UnitSelector } from './components/UnitSelector';
 import { TestMode } from './components/TestMode';
 import { TestResult as TestResultComponent } from './components/TestResult';
 import { WrongWords } from './components/WrongWords';
 import { VocabularyList } from './components/VocabularyList';
+import { ModeSelect } from './components/ModeSelect';
 import { LiquidGlass } from './components/LiquidGlass';
 import { findWordLocation } from './utils';
+import { WRONG_WORDS_UNIT } from './constants';
 import styles from './styles/modules/App.module.css';
 import sharedStyles from './styles/modules/shared.module.css';
 
 type View = 'select' | 'modeSelect' | 'test' | 'result' | 'wrongWords' | 'vocabulary';
-type TestModeType = 'chineseToEnglish' | 'englishToChinese';
-
-const confusingWords = confusingWordsData as Record<string, string[]>;
 
 /** 校验保存的测试状态是否有效 */
 function isValidSavedState(state: SavedTestState): boolean {
@@ -36,6 +34,7 @@ function isValidSavedState(state: SavedTestState): boolean {
 
 function App() {
   const [textbooks, setTextbooks] = useState<Textbook[]>([]);
+  const [confusingWords, setConfusingWords] = useState<Record<string, string[]> | undefined>(undefined);
   const [dataLoading, setDataLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>('select');
   const [selectedUnits, setSelectedUnits] = useState<Unit[]>([]);
@@ -137,7 +136,8 @@ function App() {
     setCurrentView('modeSelect');
   }, [findUnitGradeVolume]);
 
-  const handleModeSelected = useCallback((mode: TestModeType) => {
+  const handleModeSelected = useCallback((mode: TestModeType, confusing?: Record<string, string[]>) => {
+    if (confusing) setConfusingWords(confusing);
     if (savedTestState) {
       setPendingAction('newTest');
       setPendingMode(mode);
@@ -196,15 +196,13 @@ function App() {
   }, []);
 
   /** 保存测试进度（含退出跳转） */
-  const handleSaveTestState = useCallback((state: SavedTestState) => {
-    setSavedTestState(state);
-  }, []);
+  const handleSaveTestState = (state: SavedTestState) => setSavedTestState(state);
 
   /** 退出测试：保存并返回选择页 */
-  const handleQuitTest = useCallback((state: SavedTestState) => {
+  const handleQuitTest = (state: SavedTestState) => {
     setSavedTestState(state);
     setCurrentView('select');
-  }, []);
+  };
 
   /** 记录错词，若已存在则累加错误次数 */
   const handleWrongWord = useCallback((word: Word) => {
@@ -237,10 +235,6 @@ function App() {
     setCurrentView('select');
     setTestResult(null);
   }, [currentView, savedTestState]);
-
-  const handleShowWrongWords = useCallback(() => setCurrentView('wrongWords'), []);
-  const handleBackFromWrongWords = useCallback(() => setCurrentView('select'), []);
-  const handleShowVocabulary = useCallback(() => setCurrentView('vocabulary'), []);
 
   const handleVocabTestWords = useCallback((words: Word[], grade: string, volume: string, unitName: string) => {
     const unit: Unit = { unit: unitName, words };
@@ -395,77 +389,21 @@ function App() {
       )}
 
       {currentView === 'modeSelect' && (
-        <div className={styles.modeSelect}>
-          <h2>选择测试模式</h2>
-
-          {savedTestState && (
-            <div className={styles.savedTestBanner}>
-              <div className={styles.savedTestInfo}>
-                <span className={styles.savedTestLabel}>上次未完成的测试</span>
-                <span className={styles.savedTestDetail}>
-                  {savedTestState.grade}{savedTestState.volume}
-                  {' · '}
-                  {savedTestState.unitNames.join('、')}
-                  {' · '}
-                  {savedTestState.testMode === 'chineseToEnglish' ? '看中文选英文' : '看英文选中文'}
-                  {' · '}
-                  {savedTestState.difficulty === 'hard' ? '困难' : '普通'}
-                  {' · '}
-                  已答 {savedTestState.currentIndex} / {savedTestState.questions.length} 题
-                  {' · '}
-                  正确 {savedTestState.correctWords.length} · 错误 {savedTestState.incorrectWords.length}
-                </span>
-              </div>
-              <button className={`${sharedStyles.btn} ${sharedStyles.btnPrimary}`} onClick={handleConfirmKeep}>
-                继续上次测试
-              </button>
-            </div>
-          )}
-
-          <div className={styles.difficultyToggleWrapper}>
-            <span className={`${styles.difficultyLabel} ${difficulty === 'normal' ? styles.difficultyLabelActive : ''}`}>普通</span>
-            <button
-              className={`${styles.difficultyToggle} ${difficulty === 'hard' ? styles.difficultyToggleHard : styles.difficultyToggleNormal}`}
-              onClick={() => setDifficulty(d => d === 'normal' ? 'hard' : 'normal')}
-              role="switch"
-              aria-checked={difficulty === 'hard'}
-              aria-label="难度切换"
-            >
-              <span className={styles.difficultyThumb} />
-            </button>
-            <span className={`${styles.difficultyLabel} ${difficulty === 'hard' ? styles.difficultyLabelActive : ''}`}>困难</span>
-          </div>
-          <p className={styles.difficultyHint}>
-            {difficulty === 'normal'
-              ? '备选项随机抽取自全部词汇'
-              : '备选项为拼写或词根相近的易混淆词'}
-          </p>
-
-          <div className={styles.modeButtons}>
-            <button
-              className={styles.modeButton}
-              onClick={() => handleModeSelected('chineseToEnglish')}
-            >
-              <span className={styles.modeIcon}>&#127464;&#127475; &rarr; &#127468;&#127463;</span>
-              <span className={styles.modeLabel}>看中文选英文</span>
-              <span className={styles.modeDesc}>给出中文释义，选择正确的英文单词</span>
-            </button>
-            <button
-              className={styles.modeButton}
-              onClick={() => handleModeSelected('englishToChinese')}
-            >
-              <span className={styles.modeIcon}>&#127468;&#127463; &rarr; &#127464;&#127475;</span>
-              <span className={styles.modeLabel}>看英文选中文</span>
-              <span className={styles.modeDesc}>给出英文单词，选择正确的中文释义</span>
-            </button>
-          </div>
-        </div>
+        <ModeSelect
+          savedTestState={savedTestState}
+          difficulty={difficulty}
+          confusingWords={confusingWords}
+          onConfusingWordsChange={setConfusingWords}
+          onDifficultyChange={setDifficulty}
+          onModeSelected={handleModeSelected}
+          onConfirmKeep={handleConfirmKeep}
+        />
       )}
 
       {currentView === 'test' && (
         <TestMode
           units={isTestingWrongWords
-            ? [{ unit: '错题本', words: wrongWords.map(w => w.word) }]
+            ? [{ unit: WRONG_WORDS_UNIT, words: wrongWords.map(w => w.word) }]
             : (retryUnits.length > 0 ? retryUnits : selectedUnits)
           }
           testMode={testMode}
@@ -503,7 +441,7 @@ function App() {
                 清空全部
               </button>
             )}
-            <button onClick={handleBackFromWrongWords} className={`${sharedStyles.btn} ${sharedStyles.btnSecondary}`}>
+            <button onClick={() => setCurrentView('select')} className={`${sharedStyles.btn} ${sharedStyles.btnSecondary}`}>
               返回
             </button>
           </div>
@@ -541,7 +479,7 @@ function App() {
                 </button>
               )}
               <button
-                onClick={handleShowWrongWords}
+                onClick={() => setCurrentView('wrongWords')}
                 className={`${styles.tabItem} ${currentView === 'wrongWords' ? styles.tabItemActive : ''}`}
               >
                 <svg className={styles.tabIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -551,7 +489,7 @@ function App() {
                 {wrongWords.length > 0 && <span className={styles.tabBadge}>{wrongWords.length}</span>}
               </button>
               <button
-                onClick={handleShowVocabulary}
+                onClick={() => setCurrentView('vocabulary')}
                 className={`${styles.tabItem} ${currentView === 'vocabulary' ? styles.tabItemActive : ''}`}
               >
                 <svg className={styles.tabIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

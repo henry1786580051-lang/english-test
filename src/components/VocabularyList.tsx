@@ -145,12 +145,36 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
     onTestWords(selectedWordObjects, loc?.grade ?? '', loc?.volume ?? '', selectedUnit.unit);
   };
 
-  const hasSelection = selectedUnit !== null;
   const allChecked = filteredWords.length > 0 && filteredWords.every(w => selectedWords.has(w.english));
   const hasChecked = selectedWords.size > 0;
 
+  /** 渲染单行词汇（虚拟化/非虚拟化共用） */
+  const renderWordRow = (word: Word, index: number) => {
+    const isSelected = selectedWords.has(word.english);
+    const isHighlight = highlightWord === word.english;
+    return (
+      <tr
+        key={`${word.english}-${index}`}
+        className={[isSelected ? styles.rowSelected : '', isHighlight ? styles.rowHighlight : ''].filter(Boolean).join(' ')}
+        onClick={() => toggleWord(word.english)}
+      >
+        <td className={styles.colCheck}>
+          <span className={`${styles.checkBtn} ${isSelected ? styles.checkBtnChecked : ''}`}>
+            {isSelected ? '✓' : ''}
+          </span>
+        </td>
+        <td className={styles.colEnglish}>{word.english}</td>
+        <td className={styles.colPos}>
+          <span className={styles.posTag}>{posLabel(word.partOfSpeech)}</span>
+          <span className={styles.posAbbrev}>{word.partOfSpeech}</span>
+        </td>
+        <td className={styles.colChinese}>{word.chinese}</td>
+      </tr>
+    );
+  };
+
   return (
-    <div className={`${styles.vocabulary} ${hasSelection ? styles.vocabularyActive : ''}`}>
+    <div className={`${styles.vocabulary} ${selectedUnit ? styles.vocabularyActive : ''}`}>
       <h2>词汇表</h2>
 
       {/* 全局搜索 */}
@@ -219,7 +243,7 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
           })}
         </aside>
 
-        {hasSelection && (
+        {selectedUnit && (
           <main className={styles.vocabularyMain}>
             <div className={styles.vocabularyHeader}>
               <h3>{selectedUnit.unit}</h3>
@@ -258,32 +282,7 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
                 </thead>
                 <tbody ref={tableBodyRef}>
                   {filteredWords.length <= 60 ? (
-                    filteredWords.map((word, i) => {
-                      const isSelected = selectedWords.has(word.english);
-                      const isHighlight = highlightWord === word.english;
-                      return (
-                        <tr
-                          key={`${word.english}-${i}`}
-                          className={[
-                            isSelected ? styles.rowSelected : '',
-                            isHighlight ? styles.rowHighlight : '',
-                          ].filter(Boolean).join(' ')}
-                          onClick={() => toggleWord(word.english)}
-                        >
-                          <td className={styles.colCheck}>
-                            <span className={`${styles.checkBtn} ${isSelected ? styles.checkBtnChecked : ''}`}>
-                              {isSelected ? '✓' : ''}
-                            </span>
-                          </td>
-                          <td className={styles.colEnglish}>{word.english}</td>
-                          <td className={styles.colPos}>
-                            <span className={styles.posTag}>{posLabel(word.partOfSpeech)}</span>
-                            <span className={styles.posAbbrev}>{word.partOfSpeech}</span>
-                          </td>
-                          <td className={styles.colChinese}>{word.chinese}</td>
-                        </tr>
-                      );
-                    })
+                    filteredWords.map((word, i) => renderWordRow(word, i))
                   ) : (() => {
                     const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);
                     const endIndex = Math.min(
@@ -298,33 +297,9 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
                         {topSpacer > 0 && (
                           <tr style={{ height: topSpacer }}><td colSpan={4} /></tr>
                         )}
-                        {filteredWords.slice(startIndex, endIndex).map((word, i) => {
-                          const realIndex = startIndex + i;
-                          const isSelected = selectedWords.has(word.english);
-                          const isHighlight = highlightWord === word.english;
-                          return (
-                            <tr
-                              key={`${word.english}-${realIndex}`}
-                              className={[
-                                isSelected ? styles.rowSelected : '',
-                                isHighlight ? styles.rowHighlight : '',
-                              ].filter(Boolean).join(' ')}
-                              onClick={() => toggleWord(word.english)}
-                            >
-                              <td className={styles.colCheck}>
-                                <span className={`${styles.checkBtn} ${isSelected ? styles.checkBtnChecked : ''}`}>
-                                  {isSelected ? '✓' : ''}
-                                </span>
-                              </td>
-                              <td className={styles.colEnglish}>{word.english}</td>
-                              <td className={styles.colPos}>
-                                <span className={styles.posTag}>{posLabel(word.partOfSpeech)}</span>
-                                <span className={styles.posAbbrev}>{word.partOfSpeech}</span>
-                              </td>
-                              <td className={styles.colChinese}>{word.chinese}</td>
-                            </tr>
-                          );
-                        })}
+                        {filteredWords.slice(startIndex, endIndex).map((word, i) =>
+                          renderWordRow(word, startIndex + i)
+                        )}
                         {bottomSpacer > 0 && (
                           <tr style={{ height: bottomSpacer }}><td colSpan={4} /></tr>
                         )}

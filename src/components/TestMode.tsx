@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Unit, Word, TestQuestion, SavedTestState, Difficulty } from '../types';
 import { shuffle } from '../utils';
+import { WRONG_WORDS_UNIT } from '../constants';
 import styles from '../styles/modules/TestMode.module.css';
 
 interface TestModeProps {
@@ -23,6 +24,57 @@ interface TestModeProps {
   confusingWords?: Record<string, string[]>;
 }
 
+/** 从易混淆词表中提取干扰选项 */
+function getConfusingOptions(
+  word: Word,
+  pool: Word[],
+  isChineseToEnglish: boolean,
+  confusingMap: Record<string, string[]>,
+): string[] {
+  const confusingEnglish = confusingMap[word.english] ?? [];
+
+  if (isChineseToEnglish) {
+    // C2E: 选项是英文，直接从 confusingMap 取英文（匹配 optionPool 中存在的）
+    return shuffle(confusingEnglish.filter(e => pool.some(w => w.english === e))).slice(0, 3);
+  }
+
+  // E2C: 选项是中文，把易混淆英文词映射为中文释义
+  const fromConfusing: string[] = [];
+  for (const ce of confusingEnglish) {
+    const cw = pool.find(w => w.english === ce);
+    if (cw && cw.chinese !== word.chinese) {
+      fromConfusing.push(cw.chinese);
+    }
+  }
+  return shuffle(fromConfusing).slice(0, 3);
+}
+
+/** 补足不足 3 个的干扰选项（优先同词性） */
+function fillWrongOptions(
+  correct: string,
+  existing: string[],
+  pool: Word[],
+  field: 'english' | 'chinese',
+  pos: string,
+): string[] {
+  const result = [...existing];
+  const used = new Set([correct, ...result]);
+
+  const addFrom = (words: Word[]) => {
+    for (const w of shuffle(words)) {
+      if (result.length >= 3) break;
+      if (!used.has(w[field])) {
+        result.push(w[field]);
+        used.add(w[field]);
+      }
+    }
+  };
+
+  addFrom(pool.filter(w => w.partOfSpeech === pos));
+  if (result.length < 3) addFrom(pool);
+  return result;
+}
+
 /** 从词库生成测试题目（纯函数，便于测试） */
 function generateQuestions(
   units: Unit[],
@@ -31,76 +83,31 @@ function generateQuestions(
   difficulty: Difficulty,
   confusingWordsMap?: Record<string, string[]>,
 ): TestQuestion[] {
-  const testWords = units.flatMap(u => u.words);
-  const shuffledWords = shuffle(testWords);
+  const shuffledWords = shuffle(units.flatMap(u => u.words));
   const isChineseToEnglish = testMode === 'chineseToEnglish';
+  const field = isChineseToEnglish ? 'english' : 'chinese';
 
   return shuffledWords.map(word => {
-    const correctAnswer = isChineseToEnglish ? word.english : word.chinese;
-    let wrongOptions: string[];
+    const correctAnswer = word[field];
 
-    if (difficulty === 'hard' && isChineseToEnglish && confusingWordsMap) {
-      const confusingList = confusingWordsMap[word.english] ?? [];
-      const fromConfusing = shuffle(confusingList).slice(0, 3);
-      if (fromConfusing.length < 3) {
-        const need = 3 - fromConfusing.length;
-        const samePos = optionPool.filter(w =>
-          w.english !== word.english &&
-          w.partOfSpeech === word.partOfSpeech &&
-          !fromConfusing.includes(w.english)
-        );
-        const fallback = shuffle(samePos.length >= need ? samePos : optionPool.filter(w =>
-          w.english !== word.english && !fromConfusing.includes(w.english)
-        )).slice(0, need).map(w => w.english);
-        wrongOptions = shuffle([...fromConfusing, ...fallback]);
-      } else {
-        wrongOptions = fromConfusing;
-      }
-    } else if (difficulty === 'hard' && !isChineseToEnglish && confusingWordsMap) {
-      const confusingList = confusingWordsMap[word.english] ?? [];
-      const confusingChinese: string[] = [];
-      for (const ce of confusingList) {
-        const cw = optionPool.find(w => w.english === ce);
-        if (cw && cw.chinese !== word.chinese) {
-          confusingChinese.push(cw.chinese);
-        }
-      }
-      const fromConfusing = shuffle(confusingChinese).slice(0, 3);
-      if (fromConfusing.length < 3) {
-        const need = 3 - fromConfusing.length;
-        const samePos = optionPool.filter(w =>
-          w.chinese !== word.chinese &&
-          w.partOfSpeech === word.partOfSpeech &&
-          !fromConfusing.includes(w.chinese)
-        );
-        const fallback = shuffle(samePos.length >= need ? samePos : optionPool.filter(w =>
-          w.chinese !== word.chinese && !fromConfusing.includes(w.chinese)
-        )).slice(0, need).map(w => w.chinese);
-        wrongOptions = shuffle([...fromConfusing, ...fallback]);
-      } else {
-        wrongOptions = fromConfusing;
-      }
-    } else {
-      const wrongWords = optionPool.filter(w =>
-        (isChineseToEnglish ? w.english : w.chinese) !== correctAnswer
-      );
-      wrongOptions = shuffle(wrongWords).slice(0, 3).map(w =>
-        isChineseToEnglish ? w.english : w.chinese
-      );
-    }
+    const wrongOptions = difficulty === 'hard' && confusingWordsMap
+      ? getConfusingOptions(word, optionPool, isChineseToEnglish, confusingWordsMap)
+      : [];
 
-    const uniqueWrong = [...new Set(wrongOptions.filter(o => o !== correctAnswer))];
-    while (uniqueWrong.length < 3) {
-      const filler = optionPool.find(w =>
-        (isChineseToEnglish ? w.english : w.chinese) !== correctAnswer &&
-        !uniqueWrong.includes(isChineseToEnglish ? w.english : w.chinese)
-      );
-      if (filler) uniqueWrong.push(isChineseToEnglish ? filler.english : filler.chinese);
-      else break;
-    }
-    const options = shuffle([correctAnswer, ...uniqueWrong.slice(0, 3)]);
+    const filled = fillWrongOptions(
+      correctAnswer,
+      wrongOptions.filter(o => o !== correctAnswer),
+      optionPool,
+      field,
+      word.partOfSpeech,
+    );
 
-    return { word, options, correctAnswer, isChineseToEnglish };
+    return {
+      word,
+      options: shuffle([correctAnswer, ...filled.slice(0, 3)]),
+      correctAnswer,
+      isChineseToEnglish,
+    };
   });
 }
 
@@ -131,7 +138,7 @@ export function TestMode({
     stateRef.current = { correctWords, incorrectWords, currentIndex };
   });
 
-  const isTestingWrongWords = units.length === 1 && units[0].unit === '错题本';
+  const isTestingWrongWords = units.length === 1 && units[0].unit === WRONG_WORDS_UNIT;
 
   // 生成题目（仅执行一次，有保存状态时跳过）
   useEffect(() => {

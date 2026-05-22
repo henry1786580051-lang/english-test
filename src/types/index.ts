@@ -42,6 +42,8 @@ export interface WrongWord {
 
 export type Difficulty = 'normal' | 'hard';
 
+export type TestModeType = 'chineseToEnglish' | 'englishToChinese';
+
 export interface SavedTestState {
   questions: TestQuestion[];
   currentIndex: number;
