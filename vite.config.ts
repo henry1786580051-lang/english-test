@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.VERCEL ? '/' : '/english-test/',
+  base: process.env.TAURI_ENV_PLATFORM ? '/' : (process.env.VERCEL ? '/' : '/english-test/'),
   plugins: [
     react(),
     VitePWA({

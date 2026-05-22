@@ -1,0 +1,60 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Tauri app
+        run: pnpm tauri build
+
+      - name: Find build artifacts
+        id: find-artifacts
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -Path "src-tauri/target/release/bundle/msi" -Filter "*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
+          $exe = Get-ChildItem -Path "src-tauri/target/release/bundle/nsis" -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($msi) {
+            Write-Host "Found MSI: $($msi.FullName)"
+            echo "MSI_PATH=$($msi.FullName)" >> $env:GITHUB_OUTPUT
+          }
+          if ($exe) {
+            Write-Host "Found EXE: $($exe.FullName)"
+            echo "EXE_PATH=$($exe.FullName)" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Upload to Release v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "${{ steps.find-artifacts.outputs.MSI_PATH }}" ]; then
+            gh release upload v1.0.0 "${{ steps.find-artifacts.outputs.MSI_PATH }}" --clobber
+          fi
+          if [ -n "${{ steps.find-artifacts.outputs.EXE_PATH }}" ]; then
+            gh release upload v1.0.0 "${{ steps.find-artifacts.outputs.EXE_PATH }}" --clobber
+          fi
