@@ -47,16 +47,16 @@ jobs:
             echo "EXE_PATH=$($exe.FullName)" >> $env:GITHUB_OUTPUT
           }
 
-      - name: Upload to Release v1.0.0
+      - name: Upload to Release v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           if [ -n "${{ steps.find-artifacts.outputs.MSI_PATH }}" ]; then
-            gh release upload v1.0.0 "${{ steps.find-artifacts.outputs.MSI_PATH }}" --clobber
+            gh release upload v1.0.1 "${{ steps.find-artifacts.outputs.MSI_PATH }}" --clobber
           fi
           if [ -n "${{ steps.find-artifacts.outputs.EXE_PATH }}" ]; then
-            gh release upload v1.0.0 "${{ steps.find-artifacts.outputs.EXE_PATH }}" --clobber
+            gh release upload v1.0.1 "${{ steps.find-artifacts.outputs.EXE_PATH }}" --clobber
           fi
 
   build-windows-arm64:
@@ -115,14 +115,14 @@ jobs:
             echo "EXE_PATH=$($exe.FullName)" >> $env:GITHUB_OUTPUT
           }
 
-      - name: Upload to Release v1.0.0
+      - name: Upload to Release v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           if [ -n "${{ steps.find-artifacts.outputs.MSI_PATH }}" ]; then
-            gh release upload v1.0.0 "${{ steps.find-artifacts.outputs.MSI_PATH }}" --clobber
+            gh release upload v1.0.1 "${{ steps.find-artifacts.outputs.MSI_PATH }}" --clobber
           fi
           if [ -n "${{ steps.find-artifacts.outputs.EXE_PATH }}" ]; then
-            gh release upload v1.0.0 "${{ steps.find-artifacts.outputs.EXE_PATH }}" --clobber
+            gh release upload v1.0.1 "${{ steps.find-artifacts.outputs.EXE_PATH }}" --clobber
           fi
