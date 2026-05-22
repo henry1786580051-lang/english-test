@@ -82,7 +82,14 @@ jobs:
         run: rustup target add aarch64-pc-windows-msvc
 
       - name: Install LLVM for cross-compilation
-        run: choco install llvm -y
+        shell: pwsh
+        run: |
+          try {
+            choco install llvm -y
+          } catch {
+            Write-Host "choco install failed, trying winget..."
+            winget install LLVM.LLVM --accept-package-agreements --accept-source-agreements
+          }
 
       - name: Install dependencies
         run: pnpm install
