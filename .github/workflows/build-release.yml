@@ -1,4 +1,4 @@
-name: Build Windows EXE
+name: Build Installers
 
 on:
   workflow_dispatch:
@@ -7,6 +7,100 @@ permissions:
   contents: write
 
 jobs:
+  build-macos-x64:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Tauri app
+        run: pnpm tauri build --target x86_64-apple-darwin
+
+      - name: Find build artifacts
+        id: find-artifacts
+        run: |
+          DMG=$(find src-tauri/target/x86_64-apple-darwin/release/bundle/dmg -name "*.dmg" 2>/dev/null | head -1)
+          APP=$(find src-tauri/target/x86_64-apple-darwin/release/bundle/macos -name "*.app" 2>/dev/null | head -1)
+          if [ -n "$DMG" ]; then
+            echo "Found DMG: $DMG"
+            echo "DMG_PATH=$DMG" >> $GITHUB_OUTPUT
+          fi
+          if [ -n "$APP" ]; then
+            echo "Found APP: $APP"
+            echo "APP_PATH=$APP" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload to Release v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ steps.find-artifacts.outputs.DMG_PATH }}" ]; then
+            gh release upload v1.0.1 "${{ steps.find-artifacts.outputs.DMG_PATH }}" --clobber
+          fi
+
+  build-macos-arm64:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Tauri app
+        run: pnpm tauri build --target aarch64-apple-darwin
+
+      - name: Find build artifacts
+        id: find-artifacts
+        run: |
+          DMG=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/dmg -name "*.dmg" 2>/dev/null | head -1)
+          APP=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/macos -name "*.app" 2>/dev/null | head -1)
+          if [ -n "$DMG" ]; then
+            echo "Found DMG: $DMG"
+            echo "DMG_PATH=$DMG" >> $GITHUB_OUTPUT
+          fi
+          if [ -n "$APP" ]; then
+            echo "Found APP: $APP"
+            echo "APP_PATH=$APP" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload to Release v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ steps.find-artifacts.outputs.DMG_PATH }}" ]; then
+            gh release upload v1.0.1 "${{ steps.find-artifacts.outputs.DMG_PATH }}" --clobber
+          fi
+
   build-windows-x64:
     runs-on: windows-latest
     steps:
