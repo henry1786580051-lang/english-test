@@ -69,9 +69,10 @@
 }
 
 .unitButtonSelected {
-  background: var(--color-primary);
+  background: var(--color-primary-subtle);
   border-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .unitButton .wordCount {
