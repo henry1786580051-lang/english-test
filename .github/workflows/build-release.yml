@@ -99,7 +99,7 @@ jobs:
           CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_LINKER: lld-link
         run: pnpm tauri build --target aarch64-pc-windows-msvc
 
-      - name: Find and rename build artifacts
+      - name: Find build artifacts
         id: find-artifacts
         shell: pwsh
         run: |
@@ -107,18 +107,12 @@ jobs:
           $exe = Get-ChildItem -Path "src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis" -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
 
           if ($msi) {
-            $newMsiName = $msi.Name -replace '\.msi$', '_arm64.msi'
-            $newMsiPath = Join-Path $msi.DirectoryName $newMsiName
-            Rename-Item -Path $msi.FullName -NewName $newMsiName
-            Write-Host "Renamed MSI: $newMsiPath"
-            echo "MSI_PATH=$newMsiPath" >> $env:GITHUB_OUTPUT
+            Write-Host "Found MSI: $($msi.FullName)"
+            echo "MSI_PATH=$($msi.FullName)" >> $env:GITHUB_OUTPUT
           }
           if ($exe) {
-            $newExeName = $exe.Name -replace '\.exe$', '_arm64_setup.exe'
-            $newExePath = Join-Path $exe.DirectoryName $newExeName
-            Rename-Item -Path $exe.FullName -NewName $newExeName
-            Write-Host "Renamed EXE: $newExePath"
-            echo "EXE_PATH=$newExePath" >> $env:GITHUB_OUTPUT
+            Write-Host "Found EXE: $($exe.FullName)"
+            echo "EXE_PATH=$($exe.FullName)" >> $env:GITHUB_OUTPUT
           }
 
       - name: Upload to Release v1.0.0
