@@ -8,7 +8,7 @@
 
 一个类似百词斩的网页端英语单词学习应用，基于 React + TypeScript + Vite 构建。
 
-> **👉 [点击这里直接在线使用](https://henry1786580051-lang.github.io/english-test/)**，无需安装任何软件，打开即用。
+> **👉 [点击这里直接在线使用](https://english-test.pages.dev/)**，无需安装任何软件，打开即用。
 
 <p align="center">
   <img src="screenshots/home.png" alt="应用首页" width="45%" />
@@ -53,22 +53,23 @@
 
 ### 方式一：在线使用（推荐）
 
-无需安装，直接访问：**[👉 点击在线使用](https://henry1786580051-lang.github.io/english-test/)**
+无需安装，直接访问：**[👉 点击在线使用](https://english-test.pages.dev/)**
 
 ### 方式二：下载桌面应用
 
-前往 [Releases](https://github.com/henry1786580051-lang/english-test/releases/tag/v1.0.0) 页面下载对应平台的安装包：
+前往 [Releases](https://github.com/henry1786580051-lang/english-test/releases/tag/v1.0.1) 页面下载对应平台的安装包：
 
-| 平台 | 文件 | 说明 |
+| 平台 | 架构 | 文件 |
 |------|------|------|
-| **macOS** | `English.Test_1.0.0_aarch64.dmg` | 适用于 Apple Silicon (M1/M2/M3/M4) 芯片的 Mac |
-| **Windows x64** | `English.Test_1.0.0_x64-setup.exe` | 适用于绝大多数 Intel / AMD 处理器的 Windows 电脑 |
-| **Windows x64** | `English.Test_1.0.0_x64_en-US.msi` | 同上，MSI 格式安装包 |
-| **Windows ARM64** | `English.Test_1.0.0_arm64-setup.exe` | 适用于搭载骁龙处理器的 Windows 设备（如 Surface Pro X、骁龙 X Elite 笔记本） |
-| **Windows ARM64** | `English.Test_1.0.0_arm64_en-US.msi` | 同上，MSI 格式安装包 |
+| **macOS** | Apple Silicon (M1+) | `English.Test_1.0.1_aarch64.dmg` |
+| **macOS** | Intel | `English.Test_1.0.1_x64.dmg` |
+| **Windows** | x64 | `English.Test_1.0.1_x64-setup.exe` |
+| **Windows** | x64 | `English.Test_1.0.1_x64_en-US.msi` |
+| **Windows** | ARM64 | `English.Test_1.0.1_arm64-setup.exe` |
+| **Windows** | ARM64 | `English.Test_1.0.1_arm64_en-US.msi` |
 
 > 💡 **不确定用哪个版本？**
-> - **Mac 用户**：下载 `aarch64.dmg` 文件
+> - **Mac 用户**：下载 `aarch64.dmg` 文件（Intel Mac 下载 `x64.dmg`）
 > - **Windows 用户**：下载 `x64-setup.exe` 文件（兼容绝大多数 Windows 电脑）
 
 ### 方式三：从源码构建（开发者）
@@ -200,19 +201,23 @@ pnpm dev
 ```
 src/
 ├── components/          # 组件目录
-│   ├── UnitSelector.tsx    # 单元选择组件
+│   ├── LiquidGlass.tsx     # iOS 26 液态玻璃效果组件
+│   ├── ModeSelect.tsx      # 测试模式选择组件
 │   ├── TestMode.tsx        # 测试模式组件
 │   ├── TestResult.tsx      # 测试结果组件
+│   ├── UnitSelector.tsx    # 单元选择组件
+│   ├── VocabularyList.tsx  # 词汇表组件
 │   └── WrongWords.tsx      # 错题本组件
-├── data/               # 数据目录
-│   └── words.json          # 单词数据
-├── styles/             # 样式目录
-│   └── App.css             # 应用样式
-├── types/              # 类型定义目录
-│   └── index.ts            # TypeScript 类型定义
+├── data/               # 数据目录（按年级拆分，动态导入）
+│   ├── grade7a.json ~ grade9.json  # 各册词汇数据
+│   ├── confusingWords.json         # 易混淆词数据（懒加载）
+│   └── index.ts                    # 数据加载器
+├── styles/modules/     # CSS Modules 样式目录
+├── constants.ts        # 共享常量
+├── types/index.ts      # TypeScript 类型定义
+├── utils.ts            # 工具函数
 ├── App.tsx             # 主应用组件
-├── main.tsx            # 应用入口
-└── index.css           # 全局样式
+└── main.tsx            # 应用入口
 ```
 
 ## 🤝 贡献
