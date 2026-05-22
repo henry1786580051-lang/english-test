@@ -15,7 +15,7 @@
 
 .topActions {
   position: fixed;
-  top: var(--space-md);
+  top: calc(var(--space-md) + env(safe-area-inset-top, 0px));
   right: var(--space-md);
   display: flex;
   gap: var(--space-xs);
