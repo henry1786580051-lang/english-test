@@ -68,7 +68,8 @@
   background: var(--color-primary-subtle);
 }
 
-.unitButtonSelected {
+.unitButtonSelected,
+.unitButtonSelected:hover {
   background: var(--color-primary-subtle);
   border-color: var(--color-primary);
   color: var(--color-text);
