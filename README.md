@@ -194,7 +194,9 @@ pnpm dev
 
 > 💡 如果有更多课本词汇的需求（如高中、小学或其他版本教材），欢迎提交 Issue 反馈。
 
-课本 PDF 资源来自开源项目 [ChinaTextbook](https://github.com/TapXWorld/ChinaTextbook)，感谢该项目提供的教材数据支持。
+课本原始内容版权归**人民教育出版社**所有。教材电子版来源：[人教版中小学教材电子版](https://jc.pep.com.cn)。
+
+词库提取过程中参考了开源项目 [ChinaTextbook](https://github.com/TapXWorld/ChinaTextbook) 提供的教材数据，感谢该项目的支持。
 
 ## 📁 项目结构
 
