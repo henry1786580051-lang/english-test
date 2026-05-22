@@ -53,16 +53,21 @@
 
 > 💡 **不想折腾？** 可以直接 [在线使用](https://henry1786580051-lang.github.io/english-test/)，无需安装。
 
-### 📦 下载安装包（Windows）
+### 📦 下载桌面应用
 
-前往 [Releases](https://github.com/henry1786580051-lang/english-test/releases/tag/v1.0.0) 页面下载：
+前往 [Releases](https://github.com/henry1786580051-lang/english-test/releases/tag/v1.0.0) 页面下载对应平台的安装包：
 
-| 版本 | 适用设备 |
-|------|----------|
-| **x64 版** | 绝大多数 Intel / AMD 处理器的 Windows 电脑 |
-| **ARM64 版** | 搭载骁龙处理器的 Windows 设备（如 Surface Pro X、搭载骁龙 X Elite 的笔记本） |
+| 平台 | 文件 | 说明 |
+|------|------|------|
+| **macOS** | `English.Test_1.0.0_aarch64.dmg` | 适用于 Apple Silicon (M1/M2/M3/M4) 芯片的 Mac |
+| **Windows x64** | `English.Test_1.0.0_x64-setup.exe` | 适用于绝大多数 Intel / AMD 处理器的 Windows 电脑 |
+| **Windows x64** | `English.Test_1.0.0_x64_en-US.msi` | 同上，MSI 格式安装包 |
+| **Windows ARM64** | `English.Test_1.0.0_arm64-setup.exe` | 适用于搭载骁龙处理器的 Windows 设备（如 Surface Pro X、骁龙 X Elite 笔记本） |
+| **Windows ARM64** | `English.Test_1.0.0_arm64_en-US.msi` | 同上，MSI 格式安装包 |
 
-> 💡 **不确定用哪个版本？** 请下载 **x64 版**，它兼容绝大多数 Windows 电脑。
+> 💡 **不确定用哪个版本？**
+> - **Mac 用户**：下载 `aarch64.dmg` 文件
+> - **Windows 用户**：下载 `x64-setup.exe` 文件（兼容绝大多数 Windows 电脑）
 
 <details>
 <summary><strong>🍎 macOS 安装步骤</strong></summary>
