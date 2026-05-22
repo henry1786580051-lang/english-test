@@ -8,7 +8,7 @@
 
 一个类似百词斩的网页端英语单词学习应用，基于 React + TypeScript + Vite 构建。
 
-> **👉 [点击这里直接在线使用](https://english-test.pages.dev/)**，无需安装任何软件，打开即用。
+> **👉 [点击这里直接在线使用](https://henry1786580051-lang.github.io/english-test/)**，无需安装任何软件，打开即用。
 
 <p align="center">
   <img src="screenshots/home.png" alt="应用首页" width="45%" />
@@ -53,7 +53,7 @@
 
 ### 方式一：在线使用（推荐）
 
-无需安装，直接访问：**[👉 点击在线使用](https://english-test.pages.dev/)**
+无需安装，直接访问：**[👉 点击在线使用](https://henry1786580051-lang.github.io/english-test/)**
 
 ### 方式二：下载桌面应用
 
