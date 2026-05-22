@@ -53,6 +53,17 @@
 
 > 💡 **不想折腾？** 可以直接 [在线使用](https://henry1786580051-lang.github.io/english-test/)，无需安装。
 
+### 📦 下载安装包（Windows）
+
+前往 [Releases](https://github.com/henry1786580051-lang/english-test/releases/tag/v1.0.0) 页面下载：
+
+| 版本 | 适用设备 |
+|------|----------|
+| **x64 版** | 绝大多数 Intel / AMD 处理器的 Windows 电脑 |
+| **ARM64 版** | 搭载骁龙处理器的 Windows 设备（如 Surface Pro X、搭载骁龙 X Elite 的笔记本） |
+
+> 💡 **不确定用哪个版本？** 请下载 **x64 版**，它兼容绝大多数 Windows 电脑。
+
 <details>
 <summary><strong>🍎 macOS 安装步骤</strong></summary>
 

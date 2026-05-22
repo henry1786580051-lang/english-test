@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  build-windows:
+  build-windows-x64:
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -45,6 +45,73 @@ jobs:
           if ($exe) {
             Write-Host "Found EXE: $($exe.FullName)"
             echo "EXE_PATH=$($exe.FullName)" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Upload to Release v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "${{ steps.find-artifacts.outputs.MSI_PATH }}" ]; then
+            gh release upload v1.0.0 "${{ steps.find-artifacts.outputs.MSI_PATH }}" --clobber
+          fi
+          if [ -n "${{ steps.find-artifacts.outputs.EXE_PATH }}" ]; then
+            gh release upload v1.0.0 "${{ steps.find-artifacts.outputs.EXE_PATH }}" --clobber
+          fi
+
+  build-windows-arm64:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add Rust ARM64 target
+        run: rustup target add aarch64-pc-windows-msvc
+
+      - name: Install LLVM for cross-compilation
+        run: choco install llvm -y
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Tauri app for ARM64
+        env:
+          CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_LINKER: lld-link
+        run: pnpm tauri build --target aarch64-pc-windows-msvc
+
+      - name: Find and rename build artifacts
+        id: find-artifacts
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -Path "src-tauri/target/aarch64-pc-windows-msvc/release/bundle/msi" -Filter "*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
+          $exe = Get-ChildItem -Path "src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis" -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+
+          if ($msi) {
+            $newMsiName = $msi.Name -replace '\.msi$', '_arm64.msi'
+            $newMsiPath = Join-Path $msi.DirectoryName $newMsiName
+            Rename-Item -Path $msi.FullName -NewName $newMsiName
+            Write-Host "Renamed MSI: $newMsiPath"
+            echo "MSI_PATH=$newMsiPath" >> $env:GITHUB_OUTPUT
+          }
+          if ($exe) {
+            $newExeName = $exe.Name -replace '\.exe$', '_arm64_setup.exe'
+            $newExePath = Join-Path $exe.DirectoryName $newExeName
+            Rename-Item -Path $exe.FullName -NewName $newExeName
+            Write-Host "Renamed EXE: $newExePath"
+            echo "EXE_PATH=$newExePath" >> $env:GITHUB_OUTPUT
           }
 
       - name: Upload to Release v1.0.0
