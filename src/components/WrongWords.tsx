@@ -4,6 +4,8 @@
  */
 import { useMemo } from 'react';
 import type { WrongWord, Word } from '../types';
+import styles from '../styles/modules/WrongWords.module.css';
+import sharedStyles from '../styles/modules/shared.module.css';
 
 interface WrongWordsProps {
   wrongWords: WrongWord[];
@@ -40,9 +42,9 @@ export function WrongWords({ wrongWords, onTestWrongWords, onDeleteWrongWord }: 
 
   if (wrongWords.length === 0) {
     return (
-      <div className="wrong-words">
+      <div className={styles.wrongWords}>
         <h2>错题本</h2>
-        <div className="empty-state">
+        <div className={sharedStyles.emptyState}>
           <p>还没有错题，继续加油！</p>
         </div>
       </div>
@@ -50,33 +52,33 @@ export function WrongWords({ wrongWords, onTestWrongWords, onDeleteWrongWord }: 
   }
 
   return (
-    <div className="wrong-words">
+    <div className={styles.wrongWords}>
       <h2>错题本</h2>
-      <div className="wrong-words-actions">
-        <button className="btn btn-primary" onClick={onTestWrongWords}>
+      <div className={styles.wrongWordsActions}>
+        <button className={`${sharedStyles.btn} ${sharedStyles.btnPrimary}`} onClick={onTestWrongWords}>
           测试错题 ({wrongWords.length})
         </button>
       </div>
       {Object.entries(grouped).map(([gradeVolume, units]) => (
-        <div key={gradeVolume} className="wrong-words-group">
-          <h3 className="grade-volume-title">{gradeVolume}</h3>
+        <div key={gradeVolume} className={styles.wrongWordsGroup}>
+          <h3 className={styles.gradeVolumeTitle}>{gradeVolume}</h3>
           {Object.entries(units).map(([unit, words]) => (
-            <div key={unit} className="wrong-words-unit">
-              <h4 className="unit-title">{unit}</h4>
-              <div className="wrong-words-list">
+            <div key={unit} className={styles.wrongWordsUnit}>
+              <h4 className={styles.unitTitle}>{unit}</h4>
+              <div className={styles.wrongWordsList}>
                 {words.map(item => (
-                  <div key={`${item.word.english}-${item.word.chinese}`} className="wrong-word-item">
-                    <div className="word-info">
-                      <span className="english">
+                  <div key={`${item.word.english}-${item.word.chinese}`} className={styles.wrongWordItem}>
+                    <div className={styles.wordInfo}>
+                      <span className={styles.english}>
                         {item.word.english}
-                        <span className="pos-tag">{item.word.partOfSpeech}</span>
+                        <span className={styles.posTag}>{item.word.partOfSpeech}</span>
                       </span>
-                      <span className="chinese">{item.word.chinese}</span>
+                      <span className={styles.chinese}>{item.word.chinese}</span>
                     </div>
-                    <div className="word-meta">
-                      <span className="count">错误 {item.count} 次</span>
+                    <div className={styles.wordMeta}>
+                      <span className={styles.count}>错误 {item.count} 次</span>
                       <button
-                        className="delete-btn"
+                        className={styles.deleteBtn}
                         onClick={() => onDeleteWrongWord(item.word)}
                         title="从错题本中移除"
                       >

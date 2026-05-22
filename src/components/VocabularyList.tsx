@@ -5,6 +5,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import type { Textbook, Unit, Word } from '../types';
 import { posLabel, findWordLocation } from '../utils';
+import styles from '../styles/modules/VocabularyList.module.css';
 
 interface VocabularyListProps {
   textbooks: Textbook[];
@@ -67,7 +68,7 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
   useEffect(() => {
     if (!highlightWord) return;
     const timer = setTimeout(() => {
-      const el = tableBodyRef.current?.querySelector('.row-highlight');
+      const el = tableBodyRef.current?.querySelector(`.${styles.rowHighlight}`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setTimeout(() => setHighlightWord(null), 1200);
@@ -125,10 +126,8 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
     setSelectedWords(prev => {
       const next = new Set(prev);
       if (allVisibleSelected) {
-        // 取消：仅移除可见的
         for (const k of visibleKeys) next.delete(k);
       } else {
-        // 全选：添加可见的
         for (const k of visibleKeys) next.add(k);
       }
       return next;
@@ -151,33 +150,33 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
   const hasChecked = selectedWords.size > 0;
 
   return (
-    <div className={`vocabulary ${hasSelection ? 'vocabulary--active' : ''}`}>
+    <div className={`${styles.vocabulary} ${hasSelection ? styles.vocabularyActive : ''}`}>
       <h2>词汇表</h2>
 
       {/* 全局搜索 */}
-      <div className="vocab-global-search">
+      <div className={styles.vocabGlobalSearch}>
         <input
           type="text"
           placeholder="搜索全部词汇..."
           value={globalSearch}
           onChange={e => setGlobalSearch(e.target.value)}
-          className="global-search-input"
+          className={styles.globalSearchInput}
         />
         {globalSearch.trim() && (
-          <div className="global-search-results">
+          <div className={styles.globalSearchResults}>
             {searchResults.length === 0 ? (
-              <div className="search-no-result">未找到匹配的单词</div>
+              <div className={styles.searchNoResult}>未找到匹配的单词</div>
             ) : (
               searchResults.slice(0, 20).map((r, i) => (
                 <button
                   key={`${r.word.english}-${r.unit.unit}-${i}`}
-                  className="search-result-item"
+                  className={styles.searchResultItem}
                   onClick={() => goToResult(r)}
                 >
-                  <span className="search-result-word">{r.word.english}</span>
-                  <span className="search-result-pos">{r.word.partOfSpeech}</span>
-                  <span className="search-result-chinese">{r.word.chinese}</span>
-                  <span className="search-result-locate">
+                  <span className={styles.searchResultWord}>{r.word.english}</span>
+                  <span className={styles.searchResultPos}>{r.word.partOfSpeech}</span>
+                  <span className={styles.searchResultChinese}>{r.word.chinese}</span>
+                  <span className={styles.searchResultLocate}>
                     {r.textbook.grade}{r.textbook.volume} · {r.unit.unit}
                   </span>
                 </button>
@@ -187,30 +186,30 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
         )}
       </div>
 
-      <div className="vocabulary-stage">
-        <aside className="vocabulary-sidebar">
+      <div className={styles.vocabularyStage}>
+        <aside className={styles.vocabularySidebar}>
           {textbooks.map(textbook => {
             const key = tbKey(textbook);
             const isExpanded = expandedTextbook === key;
             return (
-              <div key={key} className="vocab-textbook">
+              <div key={key} className={styles.vocabTextbook}>
                 <button
-                  className={`vocab-textbook-header ${isExpanded ? 'expanded' : ''}`}
+                  className={`${styles.vocabTextbookHeader} ${isExpanded ? styles.vocabTextbookHeaderExpanded : ''}`}
                   onClick={() => handleTextbookToggle(key)}
                 >
-                  <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+                  <span className={styles.expandIcon}>{isExpanded ? '▼' : '▶'}</span>
                   {textbook.grade}{textbook.volume}
                 </button>
                 {isExpanded && (
-                  <div className="vocab-units">
+                  <div className={styles.vocabUnits}>
                     {textbook.units.map(unit => (
                       <button
                         key={unit.unit}
-                        className={`vocab-unit-btn ${selectedUnit?.unit === unit.unit ? 'active' : ''}`}
+                        className={`${styles.vocabUnitBtn} ${selectedUnit?.unit === unit.unit ? styles.vocabUnitBtnActive : ''}`}
                         onClick={() => handleUnitSelect(unit)}
                       >
                         {unit.unit}
-                        <span className="vocab-word-count">{unit.words.length}</span>
+                        <span className={styles.vocabWordCount}>{unit.words.length}</span>
                       </button>
                     ))}
                   </div>
@@ -221,45 +220,44 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
         </aside>
 
         {hasSelection && (
-          <main className="vocabulary-main">
-            <div className="vocabulary-header">
+          <main className={styles.vocabularyMain}>
+            <div className={styles.vocabularyHeader}>
               <h3>{selectedUnit.unit}</h3>
-              <div className="vocabulary-search">
+              <div className={styles.vocabularySearch}>
                 <input
                   type="text"
                   placeholder="在当前单元内搜索..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="search-input"
+                  className={styles.searchInput}
                 />
               </div>
             </div>
             <div
-              className="vocabulary-table-wrapper"
+              className={styles.vocabularyTableWrapper}
               ref={scrollContainerRef}
               onScroll={handleScroll}
               style={{ maxHeight: '70vh', overflowY: 'auto' }}
             >
-              <table className="vocabulary-table">
+              <table className={styles.vocabularyTable}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                   <tr>
-                    <th className="col-check">
+                    <th className={styles.colCheck}>
                       <button
-                        className={`check-btn check-header ${allChecked ? 'checked' : ''}`}
+                        className={`${styles.checkBtn} ${styles.checkHeader} ${allChecked ? styles.checkBtnChecked : ''}`}
                         onClick={toggleAll}
                         title={allChecked ? '取消全选' : '全选'}
                       >
                         {allChecked ? '✓' : ''}
                       </button>
                     </th>
-                    <th className="col-english">英文</th>
-                    <th className="col-pos">词性</th>
-                    <th className="col-chinese">中文释义</th>
+                    <th className={styles.colEnglish}>英文</th>
+                    <th className={styles.colPos}>词性</th>
+                    <th className={styles.colChinese}>中文释义</th>
                   </tr>
                 </thead>
                 <tbody ref={tableBodyRef}>
                   {filteredWords.length <= 60 ? (
-                    // 单词少时直接渲染
                     filteredWords.map((word, i) => {
                       const isSelected = selectedWords.has(word.english);
                       const isHighlight = highlightWord === word.english;
@@ -267,27 +265,26 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
                         <tr
                           key={`${word.english}-${i}`}
                           className={[
-                            isSelected ? 'row-selected' : '',
-                            isHighlight ? 'row-highlight' : '',
+                            isSelected ? styles.rowSelected : '',
+                            isHighlight ? styles.rowHighlight : '',
                           ].filter(Boolean).join(' ')}
                           onClick={() => toggleWord(word.english)}
                         >
-                          <td className="col-check">
-                            <span className={`check-btn ${isSelected ? 'checked' : ''}`}>
+                          <td className={styles.colCheck}>
+                            <span className={`${styles.checkBtn} ${isSelected ? styles.checkBtnChecked : ''}`}>
                               {isSelected ? '✓' : ''}
                             </span>
                           </td>
-                          <td className="col-english">{word.english}</td>
-                          <td className="col-pos">
-                            <span className="pos-tag">{posLabel(word.partOfSpeech)}</span>
-                            <span className="pos-abbrev">{word.partOfSpeech}</span>
+                          <td className={styles.colEnglish}>{word.english}</td>
+                          <td className={styles.colPos}>
+                            <span className={styles.posTag}>{posLabel(word.partOfSpeech)}</span>
+                            <span className={styles.posAbbrev}>{word.partOfSpeech}</span>
                           </td>
-                          <td className="col-chinese">{word.chinese}</td>
+                          <td className={styles.colChinese}>{word.chinese}</td>
                         </tr>
                       );
                     })
                   ) : (() => {
-                    // 单词多时虚拟化渲染：只渲染可视区域附近的行
                     const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);
                     const endIndex = Math.min(
                       filteredWords.length,
@@ -309,22 +306,22 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
                             <tr
                               key={`${word.english}-${realIndex}`}
                               className={[
-                                isSelected ? 'row-selected' : '',
-                                isHighlight ? 'row-highlight' : '',
+                                isSelected ? styles.rowSelected : '',
+                                isHighlight ? styles.rowHighlight : '',
                               ].filter(Boolean).join(' ')}
                               onClick={() => toggleWord(word.english)}
                             >
-                              <td className="col-check">
-                                <span className={`check-btn ${isSelected ? 'checked' : ''}`}>
+                              <td className={styles.colCheck}>
+                                <span className={`${styles.checkBtn} ${isSelected ? styles.checkBtnChecked : ''}`}>
                                   {isSelected ? '✓' : ''}
                                 </span>
                               </td>
-                              <td className="col-english">{word.english}</td>
-                              <td className="col-pos">
-                                <span className="pos-tag">{posLabel(word.partOfSpeech)}</span>
-                                <span className="pos-abbrev">{word.partOfSpeech}</span>
+                              <td className={styles.colEnglish}>{word.english}</td>
+                              <td className={styles.colPos}>
+                                <span className={styles.posTag}>{posLabel(word.partOfSpeech)}</span>
+                                <span className={styles.posAbbrev}>{word.partOfSpeech}</span>
                               </td>
-                              <td className="col-chinese">{word.chinese}</td>
+                              <td className={styles.colChinese}>{word.chinese}</td>
                             </tr>
                           );
                         })}
@@ -337,7 +334,7 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
                 </tbody>
               </table>
             </div>
-            <div className="vocabulary-footer">
+            <div className={styles.vocabularyFooter}>
               共 {filteredWords.length} 个单词
               {hasChecked && ` · 已选 ${selectedWords.size} 个`}
             </div>
@@ -346,7 +343,7 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
       </div>
 
       {hasChecked && (
-        <div className="tab-bar-inner" style={{
+        <div className={styles.tabBarInner} style={{
           position: 'fixed',
           bottom: 0,
           left: 0,
@@ -361,7 +358,7 @@ export function VocabularyList({ textbooks, onTestWords }: VocabularyListProps) 
           zIndex: 100,
           borderTop: '0.5px solid rgba(0, 0, 0, 0.08)',
         }}>
-          <button className="tab-start-btn" onClick={handleTest}>
+          <button className={styles.tabStartBtn} onClick={handleTest}>
             测试选中词汇 ({selectedWords.size})
           </button>
         </div>

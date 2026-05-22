@@ -4,6 +4,8 @@
  */
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Textbook, Unit } from '../types';
+import styles from '../styles/modules/UnitSelector.module.css';
+import sharedStyles from '../styles/modules/shared.module.css';
 
 interface UnitSelectorProps {
   textbooks: Textbook[];
@@ -65,22 +67,22 @@ export function UnitSelector({ textbooks, onUnitsSelected, onSelectedCountChange
   const allSelected = selectedUnits.length === allKeys.length;
 
   return (
-    <div className="unit-selector">
+    <div className={styles.unitSelector}>
       <h2>选择要测试的单元</h2>
 
-      <div className="select-actions">
-        <button onClick={handleToggleAll} className="btn btn-secondary">
+      <div className={styles.selectActions}>
+        <button onClick={handleToggleAll} className={`${sharedStyles.btn} ${sharedStyles.btnSecondary}`}>
           {allSelected ? '取消全选' : '全选'}
         </button>
       </div>
 
-      <div className="textbooks">
+      <div className={styles.textbooks}>
         {textbooks.map(textbook => (
-          <div key={`${textbook.grade}-${textbook.volume}`} className="textbook">
-            <div className="textbook-header">
+          <div key={`${textbook.grade}-${textbook.volume}`} className={styles.textbook}>
+            <div className={styles.textbookHeader}>
               <h3>{textbook.grade}{textbook.volume}</h3>
             </div>
-            <div className="units-grid">
+            <div className={styles.unitsGrid}>
               {textbook.units.map(unit => {
                 const key = unitKey(textbook, unit);
                 const isSelected = selectedUnits.includes(key);
@@ -88,10 +90,10 @@ export function UnitSelector({ textbooks, onUnitsSelected, onSelectedCountChange
                   <button
                     key={key}
                     onClick={() => handleUnitToggle(key)}
-                    className={`unit-button ${isSelected ? 'selected' : ''}`}
+                    className={`${styles.unitButton} ${isSelected ? styles.unitButtonSelected : ''}`}
                   >
                     {unit.unit}
-                    <span className="word-count">{unit.words.length}词</span>
+                    <span className={styles.wordCount}>{unit.words.length}词</span>
                   </button>
                 );
               })}

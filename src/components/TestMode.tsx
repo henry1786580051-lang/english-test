@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Unit, Word, TestQuestion, SavedTestState, Difficulty } from '../types';
 import { shuffle } from '../utils';
+import styles from '../styles/modules/TestMode.module.css';
 
 interface TestModeProps {
   units: Unit[];
@@ -253,48 +254,48 @@ export function TestMode({
   };
 
   if (questions.length === 0) {
-    return <div className="loading">正在生成测试题...</div>;
+    return <div className={styles.loading}>正在生成测试题...</div>;
   }
 
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
   return (
-    <div className="test-mode">
-      <div className="test-header">
-        <div className="progress-bar">
-          <div className="progress" style={{ width: `${progress}%` }}></div>
+    <div className={styles.testMode}>
+      <div className={styles.testHeader}>
+        <div className={styles.progressBar}>
+          <div className={styles.progress} style={{ width: `${progress}%` }}></div>
         </div>
-        <button className="quit-btn" onClick={handleQuit} title="退出测试">
+        <button className={styles.quitBtn} onClick={handleQuit} title="退出测试">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 6 6 18" /><path d="m6 6 12 12" />
           </svg>
         </button>
       </div>
 
-      <div className="question-info">
+      <div className={styles.questionInfo}>
         <span>第 {currentIndex + 1} / {questions.length} 题</span>
-        <span className="mode-indicator">
+        <span className={styles.modeIndicator}>
           {currentQuestion.isChineseToEnglish ? '看中文选英文' : '看英文选中文'}
         </span>
       </div>
 
-      <div className="question-card" key={currentIndex}>
-        <div className="question-word">
+      <div className={styles.questionCard} key={currentIndex}>
+        <div className={styles.questionWord}>
           {currentQuestion.isChineseToEnglish
             ? currentQuestion.word.chinese
             : currentQuestion.word.english}
         </div>
 
-        <div className="options">
+        <div className={styles.options}>
           {currentQuestion.options.map((option, index) => {
             const feedbackClass = selectedAnswer?.index === index
-              ? (selectedAnswer.isCorrect ? 'correct' : 'incorrect')
+              ? (selectedAnswer.isCorrect ? styles.optionCorrect : styles.optionIncorrect)
               : '';
             return (
               <button
                 key={index}
-                className={`option ${feedbackClass}`}
+                className={`${styles.option} ${feedbackClass}`}
                 onClick={() => handleAnswer(index)}
                 disabled={isAnswered}
               >
@@ -305,7 +306,7 @@ export function TestMode({
         </div>
 
         <button
-          className="dont-know-btn"
+          className={styles.dontKnowBtn}
           onClick={handleDontKnow}
           disabled={isAnswered}
         >
@@ -313,7 +314,7 @@ export function TestMode({
         </button>
       </div>
 
-      <div className="score-display">
+      <div className={styles.scoreDisplay}>
         <span>正确: {correctWords.length}</span>
         <span>错误: {incorrectWords.length}</span>
       </div>

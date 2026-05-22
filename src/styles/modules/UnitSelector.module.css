@@ -1,0 +1,129 @@
+.unitSelector {
+  max-width: var(--max-width-wide);
+  margin: 0 auto;
+  padding: 0 var(--space-md) 100px;
+}
+
+.unitSelector h2 {
+  text-align: center;
+  font-family: var(--font-display);
+  color: var(--color-text);
+  margin-bottom: var(--space-xl);
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.selectActions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.textbooks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.textbook {
+  background: var(--color-bg-card);
+  border-radius: 20px;
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.textbookHeader h3 {
+  font-family: var(--font-display);
+  color: var(--color-text);
+  margin-bottom: var(--space-md);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.unitsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: var(--space-sm);
+}
+
+.unitButton {
+  background: var(--color-bg-elevated);
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px var(--space-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.unitButton:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.unitButtonSelected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.unitButton .wordCount {
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .unitSelector {
+    padding: 0 var(--space-sm) 80px;
+  }
+
+  .unitSelector h2 {
+    font-size: 1.4rem;
+    margin-bottom: var(--space-lg);
+  }
+
+  .selectActions {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .unitsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: var(--space-xs);
+  }
+
+  .unitButton {
+    padding: 10px var(--space-sm);
+    font-size: 0.8rem;
+  }
+
+  .textbook {
+    padding: var(--space-md);
+  }
+
+  .textbookHeader h3 {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .unitSelector h2 {
+    font-size: 1.25rem;
+  }
+
+  .unitsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  .unitButton {
+    padding: 8px var(--space-xs);
+    font-size: 0.75rem;
+  }
+}

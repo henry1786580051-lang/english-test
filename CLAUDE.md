@@ -25,7 +25,4 @@ No test runner is configured yet.
 - Entry point: `src/main.tsx` → `src/App.tsx`
 - Static assets in `src/assets/`, public files in `public/`
 
-## Proxy
-
-HTTP/HTTPS proxy at `http://127.0.0.1:7897` is configured in `.zshrc` — relevant for any network calls (API fetches, package installs).
 请始终用中文回复。

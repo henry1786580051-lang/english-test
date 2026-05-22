@@ -1,0 +1,527 @@
+.vocabulary {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--space-md) 100px;
+}
+
+.vocabulary h2 {
+  text-align: center;
+  font-family: var(--font-display);
+  color: var(--color-text);
+  margin-bottom: var(--space-xl);
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+/* Global search */
+.vocabGlobalSearch {
+  width: 240px;
+  margin: 0 auto var(--space-xl);
+  position: relative;
+}
+
+.globalSearchInput {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  transition: all var(--transition-base);
+  outline: none;
+}
+
+.globalSearchInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-subtle);
+}
+
+.globalSearchInput::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.globalSearchResults {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: max(100%, 420px);
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 360px;
+  overflow-y: auto;
+  z-index: 60;
+}
+
+.searchNoResult {
+  padding: var(--space-md);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: 0.9rem;
+}
+
+.searchResultItem {
+  width: 100%;
+  text-align: left;
+  padding: 10px var(--space-md);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  transition: background var(--transition-fast);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.searchResultItem:last-child {
+  border-bottom: none;
+}
+
+.searchResultItem:hover {
+  background: var(--color-primary-subtle);
+}
+
+.searchResultWord {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.searchResultPos {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.searchResultChinese {
+  color: var(--color-text-secondary);
+  flex: 1;
+  min-width: 0;
+}
+
+.searchResultLocate {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Stage: contains sidebar + main */
+.vocabularyStage {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-xl);
+  min-height: 60vh;
+  transition: justify-content 500ms cubic-bezier(0.25, 0.1, 0.25, 1.0);
+}
+
+.vocabularyActive .vocabularyStage {
+  justify-content: flex-start;
+}
+
+/* Sidebar */
+.vocabularySidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vocabTextbookHeader {
+  width: 100%;
+  text-align: left;
+  padding: 12px var(--space-md);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vocabTextbookHeader:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.vocabTextbookHeaderExpanded {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.expandIcon {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  width: 12px;
+  text-align: center;
+}
+
+.vocabUnits {
+  border: 1.5px solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--color-bg-card);
+  padding: var(--space-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--space-xs);
+}
+
+.vocabUnitBtn {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vocabUnitBtn:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+}
+
+.vocabUnitBtnActive {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.vocabWordCount {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* Main content */
+.vocabularyMain {
+  flex: 1;
+  min-width: 0;
+  animation: vocabSlideIn 500ms cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards;
+}
+
+@keyframes vocabSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.vocabularyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+}
+
+.vocabularyHeader h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.vocabularySearch {
+  flex-shrink: 0;
+}
+
+.searchInput {
+  padding: 8px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  width: 200px;
+  transition: all var(--transition-base);
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-subtle);
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* Table */
+.vocabularyTableWrapper {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.vocabularyTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.vocabularyTable tbody tr {
+  cursor: pointer;
+}
+
+.vocabularyTable tbody tr.rowSelected td {
+  background: var(--color-primary-subtle);
+}
+
+.vocabularyTable tbody tr.rowHighlight td {
+  animation: vocabPulse 1.2s cubic-bezier(0.25, 0.1, 0.25, 1.0);
+}
+
+@keyframes vocabPulse {
+  0% { background: rgba(218, 119, 86, 0.22); }
+  50% { background: rgba(218, 119, 86, 0.10); }
+  100% { background: transparent; }
+}
+
+.colCheck {
+  width: 40px;
+  text-align: center;
+  padding: 0;
+}
+
+.checkBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-card);
+  color: var(--color-text-inverse);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1;
+}
+
+.checkBtn:hover {
+  border-color: var(--color-primary);
+}
+
+.checkBtnChecked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.checkHeader {
+  border-radius: 4px;
+}
+
+.vocabularyTable thead {
+  background: var(--color-bg-elevated);
+}
+
+.vocabularyTable th {
+  padding: 14px var(--space-md);
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-bottom: 1.5px solid var(--color-border);
+}
+
+.vocabularyTable td {
+  padding: 12px var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.vocabularyTable tr:last-child td {
+  border-bottom: none;
+}
+
+.vocabularyTable tr:hover td {
+  background: var(--color-primary-subtle);
+}
+
+.colEnglish {
+  width: 25%;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.colPos {
+  width: 80px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.posTag {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.posAbbrev {
+  font-size: 0.78rem;
+  color: var(--color-text-tertiary);
+}
+
+.colChinese {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.vocabularyFooter {
+  text-align: center;
+  padding: var(--space-md);
+  color: var(--color-text-tertiary);
+  font-size: 0.85rem;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 640px) {
+  .vocabulary {
+    padding: 0 var(--space-sm) 80px;
+  }
+
+  .vocabulary h2 {
+    font-size: 1.4rem;
+  }
+
+  .vocabGlobalSearch {
+    width: 100%;
+  }
+
+  .searchResultLocate {
+    display: none;
+  }
+
+  .vocabularyStage {
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .vocabularyActive .vocabularyStage {
+    justify-content: flex-start;
+  }
+
+  .vocabularySidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .vocabTextbook {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .vocabTextbookHeader {
+    font-size: 0.85rem;
+    padding: 10px 12px;
+  }
+
+  .vocabularyMain {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .vocabularyHeader {
+    flex-direction: column;
+    gap: var(--space-sm);
+    align-items: flex-start;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+
+  .vocabularyTableWrapper {
+    border-radius: var(--radius-sm);
+  }
+
+  .vocabularyTable {
+    table-layout: auto;
+  }
+
+  .vocabularyTable th,
+  .vocabularyTable td {
+    padding: 10px var(--space-sm);
+    font-size: 0.85rem;
+  }
+
+  .colPos {
+    width: auto;
+  }
+
+  .colEnglish {
+    width: auto;
+    min-width: 0;
+  }
+
+  .colChinese {
+    width: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .vocabulary h2 {
+    font-size: 1.25rem;
+  }
+
+  .vocabularyTable th,
+  .vocabularyTable td {
+    padding: 8px 6px;
+    font-size: 0.8rem;
+  }
+
+  .posTag {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+  }
+}

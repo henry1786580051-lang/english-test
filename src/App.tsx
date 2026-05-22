@@ -2,8 +2,8 @@
  * 应用根组件
  * 管理全局视图路由、测试状态、错题本持久化。
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
-import wordsData from './data/words.json';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { loadAllTextbooks } from './data';
 import confusingWordsData from './data/confusingWords.json';
 import type { Textbook, Unit, Word, TestResult, WrongWord, SavedTestState, Difficulty } from './types';
 import { UnitSelector } from './components/UnitSelector';
@@ -13,16 +13,13 @@ import { WrongWords } from './components/WrongWords';
 import { VocabularyList } from './components/VocabularyList';
 import { LiquidGlass } from './components/LiquidGlass';
 import { findWordLocation } from './utils';
-import './styles/App.css';
+import styles from './styles/modules/App.module.css';
+import sharedStyles from './styles/modules/shared.module.css';
 
 type View = 'select' | 'modeSelect' | 'test' | 'result' | 'wrongWords' | 'vocabulary';
 type TestModeType = 'chineseToEnglish' | 'englishToChinese';
 
-const textbooks = wordsData as Textbook[];
 const confusingWords = confusingWordsData as Record<string, string[]>;
-
-/** 全量单词池（模块常量，不需要 useMemo） */
-const allWords = textbooks.flatMap(tb => tb.units.flatMap(u => u.words));
 
 /** 校验保存的测试状态是否有效 */
 function isValidSavedState(state: SavedTestState): boolean {
@@ -38,6 +35,8 @@ function isValidSavedState(state: SavedTestState): boolean {
 }
 
 function App() {
+  const [textbooks, setTextbooks] = useState<Textbook[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>('select');
   const [selectedUnits, setSelectedUnits] = useState<Unit[]>([]);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
@@ -76,11 +75,22 @@ function App() {
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const tabBarRef = useRef<HTMLElement>(null);
 
+  // 按册次懒加载词汇数据
+  useEffect(() => {
+    loadAllTextbooks().then(data => {
+      setTextbooks(data);
+      setDataLoading(false);
+    });
+  }, []);
+
+  /** 全量单词池 */
+  const allWords = useMemo(() => textbooks.flatMap(tb => tb.units.flatMap(u => u.words)), [textbooks]);
+
   // 底栏 indicator 定位
   useEffect(() => {
     const el = tabBarRef.current;
     if (!el) return;
-    const activeBtn = el.querySelector('.tab-item.active') as HTMLElement;
+    const activeBtn = el.querySelector(`.${styles.tabItemActive}`) as HTMLElement;
     if (activeBtn) {
       setIndicatorStyle({ left: activeBtn.offsetLeft, width: activeBtn.offsetWidth });
     }
@@ -116,7 +126,7 @@ function App() {
       }
     }
     return { grade: '', volume: '' };
-  }, []);
+  }, [textbooks]);
 
   const handleUnitsSelected = useCallback((units: Unit[]) => {
     setSelectedUnits(units);
@@ -216,7 +226,7 @@ function App() {
         count: 1,
       }];
     });
-  }, []);
+  }, [textbooks]);
 
   const handleBackToSelect = useCallback(() => {
     if (currentView === 'test' && savedTestState) {
@@ -351,16 +361,24 @@ function App() {
     input.click();
   }, [wrongWords]);
 
+  if (dataLoading) {
+    return (
+      <div className={`${styles.app} ${sharedStyles.loading}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div>正在加载词汇数据...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="app">
+    <div className={styles.app}>
       {/* 右上角导出导入按钮 */}
-      <div className="top-actions">
-        <button onClick={handleExport} className="icon-btn" title="导出数据">
+      <div className={styles.topActions}>
+        <button onClick={handleExport} className={styles.iconBtn} title="导出数据">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
         </button>
-        <button onClick={handleImport} className="icon-btn" title="导入数据">
+        <button onClick={handleImport} className={styles.iconBtn} title="导入数据">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
@@ -377,14 +395,14 @@ function App() {
       )}
 
       {currentView === 'modeSelect' && (
-        <div className="mode-select">
+        <div className={styles.modeSelect}>
           <h2>选择测试模式</h2>
 
           {savedTestState && (
-            <div className="saved-test-banner">
-              <div className="saved-test-info">
-                <span className="saved-test-label">上次未完成的测试</span>
-                <span className="saved-test-detail">
+            <div className={styles.savedTestBanner}>
+              <div className={styles.savedTestInfo}>
+                <span className={styles.savedTestLabel}>上次未完成的测试</span>
+                <span className={styles.savedTestDetail}>
                   {savedTestState.grade}{savedTestState.volume}
                   {' · '}
                   {savedTestState.unitNames.join('、')}
@@ -398,47 +416,47 @@ function App() {
                   正确 {savedTestState.correctWords.length} · 错误 {savedTestState.incorrectWords.length}
                 </span>
               </div>
-              <button className="btn btn-primary" onClick={handleConfirmKeep}>
+              <button className={`${sharedStyles.btn} ${sharedStyles.btnPrimary}`} onClick={handleConfirmKeep}>
                 继续上次测试
               </button>
             </div>
           )}
 
-          <div className="difficulty-toggle-wrapper">
-            <span className={`difficulty-label ${difficulty === 'normal' ? 'active' : ''}`}>普通</span>
+          <div className={styles.difficultyToggleWrapper}>
+            <span className={`${styles.difficultyLabel} ${difficulty === 'normal' ? styles.difficultyLabelActive : ''}`}>普通</span>
             <button
-              className={`difficulty-toggle ${difficulty === 'hard' ? 'hard' : 'normal'}`}
+              className={`${styles.difficultyToggle} ${difficulty === 'hard' ? styles.difficultyToggleHard : styles.difficultyToggleNormal}`}
               onClick={() => setDifficulty(d => d === 'normal' ? 'hard' : 'normal')}
               role="switch"
               aria-checked={difficulty === 'hard'}
               aria-label="难度切换"
             >
-              <span className="difficulty-thumb" />
+              <span className={styles.difficultyThumb} />
             </button>
-            <span className={`difficulty-label ${difficulty === 'hard' ? 'active' : ''}`}>困难</span>
+            <span className={`${styles.difficultyLabel} ${difficulty === 'hard' ? styles.difficultyLabelActive : ''}`}>困难</span>
           </div>
-          <p className="difficulty-hint">
+          <p className={styles.difficultyHint}>
             {difficulty === 'normal'
               ? '备选项随机抽取自全部词汇'
               : '备选项为拼写或词根相近的易混淆词'}
           </p>
 
-          <div className="mode-buttons">
+          <div className={styles.modeButtons}>
             <button
-              className="mode-button chinese-to-english"
+              className={styles.modeButton}
               onClick={() => handleModeSelected('chineseToEnglish')}
             >
-              <span className="mode-icon">&#127464;&#127475; &rarr; &#127468;&#127463;</span>
-              <span className="mode-label">看中文选英文</span>
-              <span className="mode-desc">给出中文释义，选择正确的英文单词</span>
+              <span className={styles.modeIcon}>&#127464;&#127475; &rarr; &#127468;&#127463;</span>
+              <span className={styles.modeLabel}>看中文选英文</span>
+              <span className={styles.modeDesc}>给出中文释义，选择正确的英文单词</span>
             </button>
             <button
-              className="mode-button english-to-chinese"
+              className={styles.modeButton}
               onClick={() => handleModeSelected('englishToChinese')}
             >
-              <span className="mode-icon">&#127468;&#127463; &rarr; &#127464;&#127475;</span>
-              <span className="mode-label">看英文选中文</span>
-              <span className="mode-desc">给出英文单词，选择正确的中文释义</span>
+              <span className={styles.modeIcon}>&#127468;&#127463; &rarr; &#127464;&#127475;</span>
+              <span className={styles.modeLabel}>看英文选中文</span>
+              <span className={styles.modeDesc}>给出英文单词，选择正确的中文释义</span>
             </button>
           </div>
         </div>
@@ -479,13 +497,13 @@ function App() {
             onTestWrongWords={handleTestWrongWords}
             onDeleteWrongWord={handleDeleteWrongWord}
           />
-          <div className="wrong-words-footer">
+          <div className={styles.wrongWordsFooter}>
             {wrongWords.length > 0 && (
-              <button onClick={() => { if (window.confirm('确定清空全部错词？')) setWrongWords([]); }} className="btn btn-secondary">
+              <button onClick={() => { if (window.confirm('确定清空全部错词？')) setWrongWords([]); }} className={`${sharedStyles.btn} ${sharedStyles.btnSecondary}`}>
                 清空全部
               </button>
             )}
-            <button onClick={handleBackFromWrongWords} className="btn btn-secondary">
+            <button onClick={handleBackFromWrongWords} className={`${sharedStyles.btn} ${sharedStyles.btnSecondary}`}>
               返回
             </button>
           </div>
@@ -498,25 +516,25 @@ function App() {
 
       {/* iOS 26 液态玻璃底栏 */}
       {(currentView === 'select' || currentView === 'modeSelect' || currentView === 'wrongWords' || currentView === 'vocabulary') && (
-        <div className="tab-bar-shell">
+        <div className={styles.tabBarShell}>
           <LiquidGlass style={{ height: 56, borderRadius: 28 }}>
-            <nav className="tab-bar-pill" ref={tabBarRef}>
+            <nav className={styles.tabBarPill} ref={tabBarRef}>
               <div
-                className="tab-indicator"
+                className={styles.tabIndicator}
                 style={{ left: indicatorStyle.left, width: indicatorStyle.width }}
               />
               <button
                 onClick={handleBackToSelect}
-                className={`tab-item ${currentView === 'select' ? 'active' : ''}`}
+                className={`${styles.tabItem} ${currentView === 'select' ? styles.tabItemActive : ''}`}
               >
-                <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg className={styles.tabIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
                 </svg>
-                <span className="tab-label">选择</span>
+                <span className={styles.tabLabel}>选择</span>
               </button>
               {currentView === 'select' && selectedUnitCount > 0 && (
                 <button
-                  className="tab-start-btn-inline"
+                  className={styles.tabStartBtnInline}
                   onClick={() => startTestRef.current()}
                 >
                   开始测试 ({selectedUnitCount})
@@ -524,22 +542,22 @@ function App() {
               )}
               <button
                 onClick={handleShowWrongWords}
-                className={`tab-item ${currentView === 'wrongWords' ? 'active' : ''}`}
+                className={`${styles.tabItem} ${currentView === 'wrongWords' ? styles.tabItemActive : ''}`}
               >
-                <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg className={styles.tabIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
-                <span className="tab-label">错题本</span>
-                {wrongWords.length > 0 && <span className="tab-badge">{wrongWords.length}</span>}
+                <span className={styles.tabLabel}>错题本</span>
+                {wrongWords.length > 0 && <span className={styles.tabBadge}>{wrongWords.length}</span>}
               </button>
               <button
                 onClick={handleShowVocabulary}
-                className={`tab-item ${currentView === 'vocabulary' ? 'active' : ''}`}
+                className={`${styles.tabItem} ${currentView === 'vocabulary' ? styles.tabItemActive : ''}`}
               >
-                <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg className={styles.tabIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
-                <span className="tab-label">词汇表</span>
+                <span className={styles.tabLabel}>词汇表</span>
               </button>
             </nav>
           </LiquidGlass>
@@ -547,15 +565,15 @@ function App() {
       )}
 
       {showConfirmDialog && (
-        <div className="dialog-overlay" onClick={handleCancelDialog}>
-          <div className="dialog" onClick={e => e.stopPropagation()}>
+        <div className={styles.dialogOverlay} onClick={handleCancelDialog}>
+          <div className={styles.dialog} onClick={e => e.stopPropagation()}>
             <h3>放弃当前进度？</h3>
             <p>你有一次未完成的测试。开始{pendingAction === 'wrongWords' ? '错题测试' : '新测试'}后，之前的进度将不会保留。</p>
-            <div className="dialog-actions">
-              <button className="btn btn-secondary" onClick={handleCancelDialog}>
+            <div className={styles.dialogActions}>
+              <button className={`${sharedStyles.btn} ${sharedStyles.btnSecondary}`} onClick={handleCancelDialog}>
                 取消
               </button>
-              <button className="btn btn-primary" onClick={handleConfirmDiscard}>
+              <button className={`${sharedStyles.btn} ${sharedStyles.btnPrimary}`} onClick={handleConfirmDiscard}>
                 {pendingAction === 'wrongWords' ? '开始错题测试' : '开始新测试'}
               </button>
             </div>
@@ -564,7 +582,7 @@ function App() {
       )}
 
       {toast && (
-        <div className="toast">{toast}</div>
+        <div className={styles.toast}>{toast}</div>
       )}
     </div>
   );

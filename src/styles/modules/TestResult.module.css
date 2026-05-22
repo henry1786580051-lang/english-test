@@ -1,0 +1,160 @@
+.testResult {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+.resultCard {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.resultCard h2 {
+  font-family: var(--font-display);
+  color: var(--color-text);
+  margin-bottom: var(--space-xl);
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.accuracy {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--space-xs);
+  line-height: 1.2;
+}
+
+.accuracyLabel {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xl);
+  font-size: 0.95rem;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2xl);
+  margin-bottom: var(--space-xl);
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1.2;
+}
+
+.statLabel {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.resultActions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.incorrectWords {
+  margin-top: var(--space-xl);
+  text-align: left;
+}
+
+.incorrectWords h3 {
+  color: var(--color-incorrect);
+  margin-bottom: var(--space-md);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.wordList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.wordItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px var(--space-md);
+  background: var(--color-incorrect-subtle);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-incorrect);
+}
+
+.wordItem .english {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.wordItem .chinese {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .testResult {
+    padding: 0 var(--space-sm);
+  }
+
+  .resultCard {
+    padding: var(--space-lg);
+  }
+
+  .resultCard h2 {
+    font-size: 1.3rem;
+  }
+
+  .accuracy {
+    font-size: 2.8rem;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .statValue {
+    font-size: 1.5rem;
+  }
+
+  .resultActions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .wordItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+}
+
+@media (max-width: 420px) {
+  .resultCard {
+    padding: var(--space-md);
+  }
+
+  .accuracy {
+    font-size: 2.4rem;
+  }
+
+  .statValue {
+    font-size: 1.3rem;
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "english-test-scaffold",
+  "name": "pep-english-vocab",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -15,7 +15,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tauri-apps/cli": "^2.11.2",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
