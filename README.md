@@ -21,7 +21,7 @@
 ## 📑 目录
 
 - [功能特点](#-功能特点)
-- [快速开始](#-快速开始)
+- [快速开始](#-快速开始) - 在线使用 / 下载桌面应用 / 从源码构建
 - [使用说明](#-使用说明)
 - [技术栈](#️-技术栈)
 - [数据来源](#-数据来源)
@@ -51,9 +51,11 @@
 
 ## 🚀 快速开始
 
-> 💡 **不想折腾？** 可以直接 [在线使用](https://henry1786580051-lang.github.io/english-test/)，无需安装。
+### 方式一：在线使用（推荐）
 
-### 📦 下载桌面应用
+无需安装，直接访问：**[👉 点击在线使用](https://henry1786580051-lang.github.io/english-test/)**
+
+### 方式二：下载桌面应用
 
 前往 [Releases](https://github.com/henry1786580051-lang/english-test/releases/tag/v1.0.0) 页面下载对应平台的安装包：
 
@@ -69,8 +71,10 @@
 > - **Mac 用户**：下载 `aarch64.dmg` 文件
 > - **Windows 用户**：下载 `x64-setup.exe` 文件（兼容绝大多数 Windows 电脑）
 
+### 方式三：从源码构建（开发者）
+
 <details>
-<summary><strong>🍎 macOS 安装步骤</strong></summary>
+<summary><strong>🍎 macOS 从源码构建</strong></summary>
 
 #### 第一步：安装 Node.js
 
@@ -113,7 +117,7 @@ pnpm dev
 </details>
 
 <details>
-<summary><strong>🪟 Windows 安装步骤</strong></summary>
+<summary><strong>🪟 Windows 从源码构建</strong></summary>
 
 #### 第一步：安装 Node.js
 
@@ -156,14 +160,6 @@ pnpm dev
 终端会显示 `http://localhost:5173/`，在浏览器中打开即可使用。按 `Ctrl + C` 可停止服务器。
 
 </details>
-
-### 🔨 构建生产版本（可选）
-
-```bash
-pnpm build
-```
-
-构建产物输出到 `dist/` 目录，可部署到任何静态托管服务。
 
 ## 📖 使用说明
 
